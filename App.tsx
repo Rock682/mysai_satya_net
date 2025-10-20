@@ -1,0 +1,694 @@
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Job } from './types';
+import { Header } from './components/Header';
+import { JobCard } from './components/JobCard';
+import { SearchIcon, ArrowPathIcon, BriefcaseIcon, ArrowLeftIcon } from './components/IconComponents';
+import { formatDateISO } from './utils/date';
+import { JobDetailModal } from './components/JobDetailModal';
+import { JobFilters } from './components/JobFilters';
+import { ContactPage } from './components/ContactPage';
+import { CalculatorsPage } from './components/CalculatorsPage';
+import { Footer } from './components/Footer';
+import { JobCardSkeleton } from './components/JobCardSkeleton';
+import { JobFiltersSkeleton } from './components/JobFiltersSkeleton';
+import { ServicesPage } from './components/ServicesPage';
+import { GiftArticlesPage } from './components/GiftArticlesPage';
+import { MockTestsPage, mockExamsData } from './components/MockTestsPage';
+import { AboutUsPage } from './components/AboutUsPage';
+import { BajajEmiModal } from './components/BajajEmiModal';
+import { csvToJson } from './utils/csv';
+import { ErrorDisplay } from './components/ErrorDisplay';
+import { CategoryDashboard } from './components/CategoryDashboard';
+import { PromotionalBanner } from './components/PromotionalBanner';
+import { NewsTicker } from './components/NewsTicker';
+
+/**
+ * Updates all relevant SEO meta tags in the document's head.
+ * @param title The new page title.
+ * @param description The new meta description.
+ * @param keywords Optional comma-separated string of keywords.
+ */
+const updateMetaTags = (title: string, description: string, keywords?: string) => {
+    document.title = title;
+
+    const updateAttribute = (id: string, attribute: 'content' | 'href', value: string) => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute(attribute, value);
+    };
+    
+    // Use a clean URL for canonical and OG tags
+    const url = window.location.origin + window.location.pathname;
+
+    updateAttribute('meta-description', 'content', description);
+    
+    if (keywords !== undefined) {
+      updateAttribute('meta-keywords', 'content', keywords);
+    }
+
+    updateAttribute('og-title', 'content', title);
+    updateAttribute('og-description', 'content', description);
+    updateAttribute('twitter-title', 'content', title);
+    updateAttribute('twitter-description', 'content', description);
+    updateAttribute('og-url', 'content', url);
+    updateAttribute('canonical-link', 'href', url);
+};
+
+
+const App: React.FC = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+
+  // Filter states
+  const [textFilter, setTextFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  
+  // View state for the home page
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Page navigation state
+  const [page, setPage] = useState<'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about'>('home');
+
+  // Theme state
+  type Theme = 'light' | 'dark' | 'system';
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+  
+  // Accessibility state
+  const [liveText, setLiveText] = useState('');
+  
+  // Bajaj EMI Modal state
+  const [isBajajModalOpen, setIsBajajModalOpen] = useState(false);
+
+  // Ref to store the element that triggered the modal for focus return
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  const fetchJobs = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setJobs([]);
+
+    // IMPORTANT: Replace this with your public Google Sheet URL.
+    // It must be shared as "Anyone with the link" and end with "/export?format=csv".
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/1rovDxCJ58N9bGdbHlrXP-l1uxdRR4F1GxO19QsWm-vs/export?format=csv";
+
+    if (!sheetUrl || sheetUrl.includes('YOUR_GOOGLE_SHEET_EXPORT_URL_HERE')) {
+        setError("Configuration Error: The Google Sheet URL is missing. Please contact the site administrator to configure it correctly.");
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+        const response = await fetch(sheetUrl);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch sheet data. Status: ${response.statusText}. Ensure the URL is correct and the sheet is public.`);
+        }
+        
+        let csvText = await response.text();
+        
+        // Remove Byte Order Mark (BOM) if present, as it can interfere with parsing
+        if (csvText.charCodeAt(0) === 0xFEFF) {
+            csvText = csvText.substring(1);
+        }
+
+        const json = csvToJson(csvText);
+
+        if (json.length === 0) {
+            setJobs([]);
+            setIsLoading(false);
+            return;
+        }
+
+        // Check for required headers to ensure the sheet is formatted correctly
+        const actualHeaders = Object.keys(json[0]).map(h => h.toLowerCase().trim());
+        const requiredHeaders = ['job title', 'description', 'last date', 'start date', 'category'];
+        const missingHeaders = requiredHeaders.filter(h => !actualHeaders.includes(h));
+
+        if (missingHeaders.length > 0) {
+            throw new Error(`Data Format Error: The spreadsheet is missing the following required columns: ${missingHeaders.join(', ')}. Please correct the sheet format.`);
+        }
+
+        const parsedJobs: Job[] = json.map((row: any, index: number) => ({
+            id: row['id'] || `job-${index}`,
+            jobTitle: row['job title'] || 'No Title',
+            description: row['description'] || 'No Description',
+            category: row['category'] || 'Other',
+            lastDate: row['last date'],
+            startDate: row['start date'],
+            salary: row['salary'],
+            responsibilities: row['responsibilities'],
+            location: row['location'],
+            employmentType: row['employment type'] || row['job type'],
+            requiredDocuments: row['required documents'],
+            sourceSheetLink: row['link'],
+            blogContent: row['blog content'],
+        }));
+        
+        setJobs(parsedJobs);
+
+    } catch (err) {
+        console.error("Error fetching or parsing jobs:", err);
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred while fetching jobs.";
+
+        if (errorMessage.toLowerCase().includes('failed to fetch')) {
+             setError('Network Error: Could not connect to the data source. Please check your internet connection and try again. If the problem persists, the data sheet may be private or unavailable.');
+        } else {
+             setError(errorMessage);
+        }
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (page === 'home') {
+        fetchJobs();
+    }
+  }, [page, fetchJobs]);
+  
+  // Effect to show Bajaj EMI modal on homepage visit
+  useEffect(() => {
+    let timer: number;
+    // Show the modal on the home page after the initial load is complete.
+    // It will reappear every time the user navigates back to the home page.
+    if (page === 'home' && !isLoading) {
+      timer = window.setTimeout(() => {
+        setIsBajajModalOpen(true);
+      }, 3000); // 3-second delay
+    } else {
+      // If not on the home page or currently loading, ensure the modal is closed.
+      setIsBajajModalOpen(false);
+    }
+    
+    // Cleanup: clear the timer if the user navigates away before it fires.
+    return () => clearTimeout(timer);
+  }, [page, isLoading]);
+
+  // Effect to handle theme changes
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    root.classList.toggle('dark', isDark);
+    localStorage.setItem('theme', theme);
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+        if (theme === 'system') {
+            root.classList.toggle('dark', mediaQuery.matches);
+        }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
+  
+  const jobsByCategory = useMemo(() => {
+    return jobs.reduce((acc, job) => {
+      const category = job.category || 'Other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(job);
+      return acc;
+    }, {} as Record<string, Job[]>);
+  }, [jobs]);
+
+  const allJobCategories = useMemo(() => Object.keys(jobsByCategory).sort(), [jobsByCategory]);
+
+  const filteredJobs = useMemo(() => {
+    let jobsToFilter = jobs;
+
+    // If a category is selected from the dashboard, start with only those jobs.
+    if (selectedCategory) {
+        jobsToFilter = jobsByCategory[selectedCategory] || [];
+    }
+
+    // Apply text filter.
+    const textFiltered = jobsToFilter.filter(job => 
+      !textFilter ||
+      job.jobTitle.toLowerCase().includes(textFilter.toLowerCase()) ||
+      job.description.toLowerCase().includes(textFilter.toLowerCase())
+    );
+
+    // Apply multi-select category filter only when no category is selected from the dashboard.
+    if (!selectedCategory && categoryFilter.length > 0) {
+      return textFiltered.filter(job => job.category && categoryFilter.includes(job.category));
+    }
+    
+    return textFiltered;
+  }, [jobs, textFilter, categoryFilter, selectedCategory, jobsByCategory]);
+
+  const latestJobs = useMemo(() => {
+    return [...jobs]
+        .sort((a, b) => {
+            const dateA = formatDateISO(a.startDate);
+            const dateB = formatDateISO(b.startDate);
+
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+
+            return dateB.localeCompare(dateA); // Descending sort for most recent first
+        })
+        .slice(0, 10);
+  }, [jobs]);
+
+
+  // Accessibility: Announce filter results
+  useEffect(() => {
+    if (!isLoading && selectedCategory) { // Only announce when in a list view
+      if (textFilter) {
+        setLiveText(`${filteredJobs.length} jobs found.`);
+      } else {
+        setLiveText(''); 
+      }
+    }
+  }, [filteredJobs.length, isLoading, textFilter, selectedCategory]);
+
+  const handleJobClick = (job: Job, event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
+    triggerRef.current = event.currentTarget;
+    setSelectedJob(job);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedJob(null);
+  };
+  
+  const handleCloseBajajModal = () => {
+    setIsBajajModalOpen(false);
+  };
+  
+  // SEO: Dynamically update page title and all meta tags
+  useEffect(() => {
+    let title = 'Sai Satya Net | Job Openings';
+    let description = "Explore current job openings at Sai Satya Net. Your one-stop solution for internet services & customized gift articles.";
+    let keywords = "jobs, careers, Sai Satya Net, Garividi, job openings, internet services, gift articles, ssc mock tests";
+
+    if (page === 'home' && selectedJob) {
+      title = `${selectedJob.jobTitle} | Sai Satya Net`;
+      description = selectedJob.description;
+      keywords = [
+          selectedJob.jobTitle, 
+          selectedJob.category, 
+          selectedJob.location, 
+          'Sai Satya Net', 
+          'job opening', 
+          'career opportunity'
+      ].filter(Boolean).join(', ');
+    } else if (page === 'about') {
+      title = 'About Us | Sai Satya Net';
+      description = "Learn about the story, mission, and founder of Sai Satya Net. Discover our commitment to providing essential internet, job, and gift services to the Garividi community.";
+      keywords = "about sai satya net, garividi services, a.satya narayana, internet services vizianagaram";
+    } else if (page === 'contact') {
+      title = 'Contact Us | Sai Satya Net';
+      description = "Get in touch with Sai Satya Net. We're here to help with any questions about our job openings or services. Reach out via phone, email, WhatsApp, or visit us.";
+      keywords = "contact sai satya net, sai satya net phone, sai satya net address, garividi, vizianagaram, saisatyanet1@gmail.com, 8977846407, whatsapp";
+    } else if (page === 'calculators') {
+      title = 'Calculators | Sai Satya Net';
+      description = "Use our free and easy-to-use calculators for age and percentages. Find out your exact age or solve any percentage problem instantly.";
+      keywords = "age calculator, percentage calculator, free online tools, sai satya net";
+    } else if (page === 'services') {
+      title = 'Our Services | Sai Satya Net';
+      description = "Explore a wide range of services offered by Sai Satya Net, including CSC services, job works, PAN card assistance, ticket bookings, EPF services, and more.";
+      keywords = "csc services, job works, pan card, ticket booking, epf services, garividi, vizianagaram";
+    } else if (page === 'gift-articles') {
+      title = 'Custom Gift Articles | Sai Satya Net';
+      description = "Discover our unique collection of customized gift articles, including photo mugs, custom t-shirts, personalized frames, and more. Perfect for any occasion.";
+      keywords = "custom gifts, photo mugs, personalized t-shirts, gift shop, garividi";
+    } else if (page === 'mock-tests') {
+      title = 'Mock Tests | Sai Satya Net';
+      description = "Prepare for competitive exams like SSC and Banking with our free online mock tests. Get detailed performance analysis and improve your scores.";
+      keywords = "ssc mock test, online exam practice, free mock test, competitive exams, banking exams";
+    }
+    
+    updateMetaTags(title, description, keywords);
+    
+  }, [selectedJob, page]);
+
+
+  // SEO: Inject JSON-LD structured data
+  useEffect(() => {
+    const scriptId = 'page-schema';
+    
+    const existingScript = document.getElementById(scriptId);
+    if (existingScript) {
+      existingScript.remove();
+    }
+    
+    let schema: object | null = null;
+    const url = window.location.origin + window.location.pathname;
+
+    if (page === 'home' && jobs.length > 0) {
+      schema = {
+        "@context": "https://schema.org/",
+        "@type": "ItemList",
+        "name": "Available Jobs at Sai Satya Net",
+        "itemListElement": jobs.map((job, index) => {
+          const jobSchema: any = {
+            "@type": "JobPosting",
+            "title": job.jobTitle,
+            "description": job.description,
+            "hiringOrganization": {
+              "@type": "Organization",
+              "name": "Sai Satya Net",
+              "sameAs": url,
+            },
+          };
+          
+          const datePosted = formatDateISO(job.startDate);
+          if (datePosted) jobSchema.datePosted = datePosted;
+          
+          const validThrough = formatDateISO(job.lastDate);
+          if (validThrough) jobSchema.validThrough = validThrough;
+
+          if (job.employmentType) jobSchema.employmentType = job.employmentType;
+          if (job.salary) jobSchema.baseSalary = { "@type": "MonetaryAmount", "currency": "INR", "value": job.salary };
+
+          if (job.location) {
+            jobSchema.jobLocation = {
+              "@type": "Place",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": job.location,
+              }
+            };
+          }
+          
+          return {
+            "@type": "ListItem",
+            "position": index + 1,
+            "item": jobSchema
+          };
+        })
+      };
+    } else if (page === 'about') {
+        schema = {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Sai Satya Net",
+          "url": url,
+          "logo": "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20rx%3D%2220%22%20fill%3D%22%2316a34a%22%20%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2250%22%20font-size%3D%2240%22%20fill%3D%22white%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%20font-family%3D%22sans-serif%22%20font-weight%3D%22bold%22%3ESSN%3C%2Ftext%3E%3C%2Fsvg%3E",
+          "founder": {
+            "@type": "Person",
+            "name": "A.Satya Narayana"
+          },
+          "foundingDate": "2010",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Beside Bridge Down, Garividi",
+            "addressLocality": "Vizianagaram",
+            "addressRegion": "Andhra Pradesh",
+            "postalCode": "535101",
+            "addressCountry": "IN"
+          },
+          "description": "Sai Satya Net is a one-stop solution for internet services, job assistance, government service facilitation, and customized gift articles in Garividi, Vizianagaram.",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "saisatyanet1@gmail.com",
+            "contactType": "customer service"
+          }
+        };
+    } else if (page === 'calculators') {
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Calculators",
+            "description": "Free online calculators for age and percentages.",
+            "url": url,
+        };
+    } else if (page === 'services') {
+        const serviceList = [
+            "Common Service Center (CSC)", "All types of Job works", "UTI Pan Card Services", "Aadhar & Pan Link", "Aadhar Update & Downloading", "Voter Id Card Apply & Correction & Downloading", "Passport New & Renewal Slot Booking", "LLR & Driving Licence Slot Booking", "Train / Bus / Flight Tickets Booking", "Toll Gates fasTag", "Travels", "Road Tax", "Trafic E Challana", "DTP Telugu Typing", "TTD Darshan Tickets & Accommodation Booking", "Shiridi Darshanam Tickets & Accommodation Booking", "Shabarimala Dharshnam Tickets Booking", "All Types PVC Cards Printing", "All types of Photo Printing", "Lamination", "Employee Health Cards", "Eshram Cards", "All Pension Holders Life Certificate", "Udyam Registration", "Marriage Certificate Registration", "Student Bus Pass", "Color & Black and Wight Zerox", "Spiral Binding", "AU, JNTU & Ambedkar Universitis Tatkal PC & OD Applications", "All types of Fee Payments", "Employment Exchange Registration", "Digi-Pay Service (AEPS)", "All Type of Banks Money Withdraw", "Money Transfer", "Balance Enquiry", "EPF Services", "UAN Number Allotment & Activation", "P F Withdraw", "EPF E- Nominee", "Epf Previous Account to Present Account Transfer", "Bank book & Pan Ekyc", "Joint Declaration Form", "APSRTC Logistics", "Parcle & Courier service"
+        ];
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Sai Satya Net Services",
+            "description": "A comprehensive list of services provided by Sai Satya Net.",
+            "itemListElement": serviceList.map((service, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                    "@type": "Service",
+                    "name": service,
+                    "provider": {
+                        "@type": "Organization",
+                        "name": "Sai Satya Net"
+                    }
+                }
+            }))
+        };
+    } else if (page === 'gift-articles') {
+        const giftList = ["Photo Mugs", "Custom T-Shirts", "Personalized Photo Frames", "Custom Keychains", "Photo Pillows", "Personalized Wall Clocks"];
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Sai Satya Net Gift Articles",
+            "description": "A collection of customizable gift articles available at Sai Satya Net.",
+            "itemListElement": giftList.map((gift, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                    "@type": "Product",
+                    "name": gift,
+                    "description": `Personalized ${gift.toLowerCase()} perfect for any occasion.`,
+                    "brand": {
+                        "@type": "Brand",
+                        "name": "Sai Satya Net"
+                    }
+                }
+            }))
+        };
+    } else if (page === 'contact') {
+        schema = {
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          "name": "Sai Satya Net",
+          "description": "Your one-stop solution for internet services & customized gift articles.",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Beside Bridge Down, Garividi",
+            "addressLocality": "Vizianagaram",
+            "addressRegion": "Andhra Pradesh",
+            "postalCode": "535101",
+            "addressCountry": "IN"
+          },
+          "email": "saisatyanet1@gmail.com",
+          "telephone": "+91-8977846407",
+          "url": url
+        };
+    } else if (page === 'mock-tests') {
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Online Mock Tests for Competitive Exams",
+            "description": "Prepare for SSC and Banking exams with free online mock tests from Sai Satya Net.",
+            "itemListElement": mockExamsData
+              .filter(exam => exam.published === 'TRUE')
+              .map((exam, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                    "@type": "Quiz",
+                    "name": exam.examName,
+                    "description": `A practice test for ${exam.examType} exams with ${exam.totalQuestions} questions.`,
+                    "timeRequired": `PT${exam.durationMinutes}M`
+                }
+              }))
+          };
+    }
+      
+    if (schema) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.type = 'application/ld+json';
+      script.innerHTML = JSON.stringify(schema);
+      document.head.appendChild(script);
+    }
+  }, [jobs, page]);
+
+  // Accessibility & Modal state management
+  useEffect(() => {
+    const header = document.getElementById('app-header');
+    const main = document.getElementById('main-content');
+    const footer = document.getElementById('app-footer');
+    
+    const isModalOpen = !!selectedJob || isBajajModalOpen;
+
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      header?.setAttribute('aria-hidden', 'true');
+      main?.setAttribute('aria-hidden', 'true');
+      footer?.setAttribute('aria-hidden', 'true');
+    } else {
+      // Modal is closed
+      document.body.style.overflow = 'auto';
+      header?.removeAttribute('aria-hidden');
+      main?.removeAttribute('aria-hidden');
+      footer?.removeAttribute('aria-hidden');
+      // Return focus to the element that opened the modal
+      if (triggerRef.current) {
+          triggerRef.current.focus();
+          triggerRef.current = null; // Clear ref after focus is returned
+      }
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+      header?.removeAttribute('aria-hidden');
+      main?.removeAttribute('aria-hidden');
+      footer?.removeAttribute('aria-hidden');
+    };
+  }, [selectedJob, isBajajModalOpen]);
+
+
+  const renderPage = () => {
+    switch(page) {
+      case 'home':
+        if (isLoading) {
+          return (
+            <div>
+              <JobFiltersSkeleton />
+              <div className="space-y-12">
+                <section>
+                  <div className="h-7 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse mb-4"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: 8 }).map((_, index) => (
+                      <JobCardSkeleton key={index} />
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </div>
+          );
+        }
+
+        if (error) {
+          return <ErrorDisplay message={error} onDismiss={() => setError(null)} onRetry={fetchJobs} />;
+        }
+
+        if (!selectedCategory) {
+          return (
+            <>
+              <PromotionalBanner 
+                text="Free mock test for Govt Exams"
+                onClick={() => setPage('mock-tests')}
+              />
+              
+              {latestJobs.length > 0 && !isLoading && (
+                 <NewsTicker jobs={latestJobs} onItemClick={handleJobClick} />
+              )}
+              
+              {latestJobs.length > 0 && !isLoading && (
+                <section className="mt-2 mb-12 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                    <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6 border-b-2 border-green-200 dark:border-green-800 pb-3">
+                        Latest Updates
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {latestJobs.slice(0, 4).map((job) => (
+                            <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                        ))}
+                    </div>
+                </section>
+              )}
+              
+              <CategoryDashboard
+                categories={allJobCategories}
+                onSelectCategory={(category) => {
+                  setSelectedCategory(category);
+                  setTextFilter('');
+                  setCategoryFilter([]);
+                }}
+              />
+            </>
+          );
+        }
+
+        return (
+          <>
+            <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                  aria-label="Back to all categories"
+                >
+                  <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                  Back to Categories
+                </button>
+                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-2">{selectedCategory}</h2>
+              </div>
+              <button
+                onClick={fetchJobs}
+                disabled={isLoading}
+                className="flex self-start sm:self-center items-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowPathIcon className={`w-5 h-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+
+            <JobFilters
+              textFilter={textFilter}
+              onTextFilterChange={setTextFilter}
+              categoryFilter={[]}
+              onCategoryFilterChange={() => {}}
+              categories={[]}
+              showCategoryFilter={false}
+            />
+
+            {filteredJobs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredJobs.map((job) => (
+                  <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 px-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg max-w-4xl mx-auto shadow-sm">
+                <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">No Matching Jobs</h3>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">
+                  No openings found in the "{selectedCategory}" category that match your search criteria.
+                </p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Try clearing your search filter.</p>
+              </div>
+            )}
+          </>
+        );
+      case 'about':
+        return <AboutUsPage />;
+      case 'contact':
+        return <ContactPage />;
+      case 'services':
+        return <ServicesPage />;
+      case 'gift-articles':
+        return <GiftArticlesPage />;
+      case 'calculators':
+        return <CalculatorsPage />;
+      case 'mock-tests':
+        return <MockTestsPage />;
+      default:
+        return <div>Page not found</div>;
+    }
+  };
+
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 flex flex-col transition-colors duration-300">
+      <Header currentPage={page} onNavigate={setPage} theme={theme} setTheme={setTheme} />
+      <div className="sr-only" aria-live="polite" role="status">
+        {liveText}
+      </div>
+      <main id="main-content" className="container mx-auto px-4 py-6 sm:py-8 flex-grow" aria-busy={isLoading}>
+        {renderPage()}
+      </main>
+      
+      {selectedJob && <JobDetailModal job={selectedJob} onClose={handleCloseModal} />}
+      {isBajajModalOpen && <BajajEmiModal isOpen={isBajajModalOpen} onClose={handleCloseBajajModal} />}
+      <Footer />
+    </div>
+  );
+};
+
+export default App;

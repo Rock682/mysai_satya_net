@@ -1,0 +1,5 @@
+{
+  "name": "Excel Job Board",
+  "description": "A dynamic job board that generates and displays job cards by reading data directly from an uploaded Excel spreadsheet. Update your job listings in Excel, upload the file, and instantly see the changes reflected on the web.",
+  "requestFramePermissions": []
+}
