@@ -1,8 +1,10 @@
+
+
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Job } from './types';
 import { Header } from './components/Header';
 import { JobCard } from './components/JobCard';
-import { SearchIcon, ArrowPathIcon, BriefcaseIcon, ArrowLeftIcon } from './components/IconComponents';
+import { SearchIcon, ArrowPathIcon, BriefcaseIcon, ArrowLeftIcon, WhatsAppIcon } from './components/IconComponents';
 import { formatDateISO } from './utils/date';
 import { JobDetailModal } from './components/JobDetailModal';
 import { JobFilters } from './components/JobFilters';
@@ -51,6 +53,49 @@ const updateMetaTags = (title: string, description: string, keywords?: string) =
     updateAttribute('twitter-description', 'content', description);
     updateAttribute('og-url', 'content', url);
     updateAttribute('canonical-link', 'href', url);
+};
+
+// --- WhatsApp Banner Component ---
+// IMPORTANT: Replace this with your actual WhatsApp Channel link.
+const WHATSAPP_CHANNEL_LINK = "https://whatsapp.com/channel/YOUR_CHANNEL_ID_HERE";
+
+const WhatsAppBanner: React.FC = () => {
+  return (
+    <section 
+      className="mt-2 mb-12 animate-fade-in-up" 
+      style={{ animationDelay: '300ms' }}
+      aria-labelledby="whatsapp-banner-title"
+    >
+      <div className="relative bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 rounded-lg p-4 sm:p-6 shadow-lg overflow-hidden">
+        <div className="absolute -bottom-6 -right-6 opacity-10 pointer-events-none">
+          <WhatsAppIcon className="w-32 h-32 text-white" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 text-white text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-3">
+            <div className="flex-shrink-0 bg-white/20 p-2 rounded-full">
+              <WhatsAppIcon className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 id="whatsapp-banner-title" className="text-lg sm:text-xl font-bold">
+                Get Daily Job Updates on WhatsApp!
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm opacity-90">
+                Never miss an opportunity. Join our channel for the latest updates.
+              </p>
+            </div>
+          </div>
+          <a
+            href={WHATSAPP_CHANNEL_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block flex-shrink-0 w-full md:w-auto bg-white text-green-600 font-bold py-2 px-4 rounded-lg shadow-md transition-transform duration-300 ease-in-out hover:bg-gray-100 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/50"
+          >
+            Join Now
+          </a>
+        </div>
+      </div>
+    </section>
+  );
 };
 
 
@@ -242,6 +287,7 @@ const App: React.FC = () => {
 
   const latestJobs = useMemo(() => {
     return [...jobs]
+        .filter(job => job.jobTitle !== 'No Title')
         .sort((a, b) => {
             const dateA = formatDateISO(a.startDate);
             const dateB = formatDateISO(b.startDate);
@@ -593,6 +639,8 @@ const App: React.FC = () => {
                 </section>
               )}
               
+              { !isLoading && <WhatsAppBanner />}
+
               <CategoryDashboard
                 categories={allJobCategories}
                 onSelectCategory={(category) => {
@@ -675,7 +723,7 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200 flex flex-col">
       <Header currentPage={page} onNavigate={setPage} theme={theme} setTheme={setTheme} />
       <div className="sr-only" aria-live="polite" role="status">
         {liveText}
