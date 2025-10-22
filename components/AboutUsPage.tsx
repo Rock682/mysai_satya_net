@@ -27,7 +27,7 @@ export const AboutUsPage: React.FC = () => {
                         <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">Our Story</h2>
                         <div className="text-gray-700 dark:text-gray-300 space-y-4 leading-relaxed">
                             <p>
-                                Founded in 2010, Sai Satya Net began with a simple yet powerful vision: to bridge the digital and service gap in Garividi, Vizianagaram. We started as a small internet café, but quickly realized our community needed more. They needed a reliable place for essential services—from job applications and official document assistance to travel bookings and financial services.
+                                Founded in 2012, Sai Satya Net began with a simple yet powerful vision: to bridge the digital and service gap in Garividi, Vizianagaram. We started as a small internet café, but quickly realized our community needed more. They needed a reliable place for essential services—from job applications and official document assistance to travel bookings and financial services.
                             </p>
                             <p>
                                 Over the years, we've grown alongside our community, expanding our offerings to become a trusted one-stop solution. Whether it's helping a student prepare for exams, assisting a citizen with their PAN card, or creating a personalized gift for a special occasion, our core mission has remained the same: to provide accessible, reliable, and friendly service to everyone who walks through our doors.

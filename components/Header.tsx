@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ExcelIcon, CalculatorIcon, AcademicCapIcon, Bars3Icon, XMarkIcon, SunIcon, MoonIcon, ComputerDesktopIcon } from './IconComponents';
+import { Page } from '../App';
 
-type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about';
 type Theme = 'light' | 'dark' | 'system';
 
 interface HeaderProps {
@@ -99,8 +99,9 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, theme, 
         <header id="app-header" className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-slate-700 sticky top-0 z-20">
             <div className="container mx-auto px-4 py-3 sm:py-4">
                 <div className="flex items-center justify-between">
-                    <button
-                        onClick={() => handleNavigate('home')}
+                    <a
+                        href="#/home"
+                        onClick={(e) => { e.preventDefault(); handleNavigate('home'); }}
                         className="flex items-center space-x-3 text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 rounded-md p-1 -m-1 transition-opacity hover:opacity-80"
                         aria-label="Sai Satya Net, go to homepage"
                     >
@@ -113,20 +114,21 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, theme, 
                                 Your One stop solution for internet services & customized Gift Articles.
                             </p>
                         </div>
-                    </button>
+                    </a>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden sm:flex items-center space-x-1 lg:space-x-2" aria-label="Main navigation">
                         {navLinks.map(({ page, label, Icon, iconClassName }) => (
-                            <button
+                            <a
                                 key={page}
-                                onClick={() => handleNavigate(page)}
+                                href={`#/${page}`}
+                                onClick={(e) => { e.preventDefault(); handleNavigate(page); }}
                                 className={`${navLinkClasses} ${currentPage === page ? activeLinkClasses : inactiveLinkClasses}`}
                                 aria-current={currentPage === page ? 'page' : undefined}
                             >
                                 {Icon && <Icon className={iconClassName} />}
                                 <span className={Icon ? "hidden lg:inline" : ""}>{label}</span>
-                            </button>
+                            </a>
                         ))}
                         <ThemeSwitcher theme={theme} setTheme={setTheme} className={themeButtonClasses} />
                     </nav>
@@ -156,15 +158,16 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, theme, 
                 <div id="mobile-menu" className="sm:hidden absolute top-full left-0 w-full bg-white dark:bg-slate-800 shadow-lg border-t border-gray-200 dark:border-slate-700 animate-fade-in-down">
                     <nav className="flex flex-col p-4 space-y-2" aria-label="Main mobile navigation">
                         {navLinks.map(({ page, label, Icon, iconClassName }) => (
-                            <button
+                            <a
                                 key={page}
-                                onClick={() => handleNavigate(page)}
+                                href={`#/${page}`}
+                                onClick={(e) => { e.preventDefault(); handleNavigate(page); }}
                                 className={`${navLinkClasses} ${currentPage === page ? activeLinkClasses : inactiveLinkClasses} justify-start text-base`}
                                 aria-current={currentPage === page ? 'page' : undefined}
                             >
                                 {Icon && <Icon className={iconClassName} />}
                                 <span>{label}</span>
-                            </button>
+                            </a>
                         ))}
                     </nav>
                 </div>

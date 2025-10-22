@@ -24,13 +24,27 @@ import { CategoryDashboard } from './components/CategoryDashboard';
 import { PromotionalBanner } from './components/PromotionalBanner';
 import { NewsTicker } from './components/NewsTicker';
 
+export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about';
+const validPages: Page[] = ['home', 'contact', 'calculators', 'services', 'gift-articles', 'mock-tests', 'about'];
+
+/**
+ * Derives the current page from the URL hash.
+ * @param hash The current window.location.hash
+ * @returns The page name. Defaults to 'home'.
+ */
+const getPageFromHash = (hash: string): Page => {
+    const page = hash.replace(/^#\/?/, '').split('/')[0] as Page;
+    return validPages.includes(page) ? page : 'home';
+};
+
+
 /**
  * Updates all relevant SEO meta tags in the document's head.
  * @param title The new page title.
  * @param description The new meta description.
  * @param keywords Optional comma-separated string of keywords.
  */
-const updateMetaTags = (title: string, description: string, keywords?: string) => {
+const updateMetaTags = (title: string, description: string, keywords?: string, path: string = '') => {
     document.title = title;
 
     const updateAttribute = (id: string, attribute: 'content' | 'href', value: string) => {
@@ -38,8 +52,8 @@ const updateMetaTags = (title: string, description: string, keywords?: string) =
         if (el) el.setAttribute(attribute, value);
     };
     
-    // Use a clean URL for canonical and OG tags
-    const url = window.location.origin + window.location.pathname;
+    // Use the full URL including the hash for canonical and OG tags
+    const url = window.location.origin + window.location.pathname + path;
 
     updateAttribute('meta-description', 'content', description);
     
@@ -56,8 +70,7 @@ const updateMetaTags = (title: string, description: string, keywords?: string) =
 };
 
 // --- WhatsApp Banner Component ---
-// IMPORTANT: Replace this with your actual WhatsApp Channel link.
-const WHATSAPP_CHANNEL_LINK = "https://whatsapp.com/channel/YOUR_CHANNEL_ID_HERE";
+const WHATSAPP_CHANNEL_LINK = "https://www.whatsapp.com/channel/0029Vb5yZWO1Hsq1iW0DeQ3s";
 
 const WhatsAppBanner: React.FC = () => {
   return (
@@ -112,8 +125,9 @@ const App: React.FC = () => {
   // View state for the home page
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Page navigation state
-  const [page, setPage] = useState<'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about'>('home');
+  // Page navigation state (now driven by URL hash)
+  const [path, setPath] = useState(window.location.hash);
+  const page = useMemo(() => getPageFromHash(path), [path]);
 
   // Theme state
   type Theme = 'light' | 'dark' | 'system';
@@ -127,6 +141,38 @@ const App: React.FC = () => {
 
   // Ref to store the element that triggered the modal for focus return
   const triggerRef = useRef<HTMLElement | null>(null);
+
+  // Effect to handle routing via URL hash
+  useEffect(() => {
+    // Set a default hash if none exists
+    if (!window.location.hash || window.location.hash === '#') {
+      window.location.hash = '/home';
+    }
+
+    const handleHashChange = () => {
+      setPath(window.location.hash);
+      window.scrollTo(0, 0); // Scroll to top on page change
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Initial call to sync state from URL on load
+    handleHashChange();
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
+  const handleNavigate = (newPage: Page) => {
+    // Reset transient state when navigating between main pages
+    if (page !== newPage) {
+        setSelectedCategory(null);
+        setSelectedJob(null);
+        setTextFilter('');
+        setCategoryFilter([]);
+    }
+    window.location.hash = `/${newPage}`;
+  };
 
   const fetchJobs = useCallback(async () => {
     setIsLoading(true);
@@ -368,9 +414,9 @@ const App: React.FC = () => {
       keywords = "ssc mock test, online exam practice, free mock test, competitive exams, banking exams";
     }
     
-    updateMetaTags(title, description, keywords);
+    updateMetaTags(title, description, keywords, path);
     
-  }, [selectedJob, page]);
+  }, [selectedJob, page, path]);
 
 
   // SEO: Inject JSON-LD structured data
@@ -383,7 +429,7 @@ const App: React.FC = () => {
     }
     
     let schema: object | null = null;
-    const url = window.location.origin + window.location.pathname;
+    const url = window.location.origin + window.location.pathname + path;
 
     if (page === 'home' && jobs.length > 0) {
       schema = {
@@ -552,7 +598,7 @@ const App: React.FC = () => {
       script.innerHTML = JSON.stringify(schema);
       document.head.appendChild(script);
     }
-  }, [jobs, page]);
+  }, [jobs, page, path]);
 
   // Accessibility & Modal state management
   useEffect(() => {
@@ -619,7 +665,7 @@ const App: React.FC = () => {
             <>
               <PromotionalBanner 
                 text="Free mock test for Govt Exams"
-                onClick={() => setPage('mock-tests')}
+                onClick={() => handleNavigate('mock-tests')}
               />
               
               {latestJobs.length > 0 && !isLoading && (
@@ -724,7 +770,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200 flex flex-col">
-      <Header currentPage={page} onNavigate={setPage} theme={theme} setTheme={setTheme} />
+      <Header currentPage={page} onNavigate={handleNavigate} theme={theme} setTheme={setTheme} />
       <div className="sr-only" aria-live="polite" role="status">
         {liveText}
       </div>

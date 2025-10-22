@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { EnvelopeIcon, PhoneIcon, FacebookIcon, InstagramIcon, WhatsAppIcon } from './IconComponents';
 
@@ -43,6 +42,9 @@ export const Footer: React.FC = () => {
                             </a>
                             <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-white transition-colors">
                                 <InstagramIcon className="h-6 w-6" />
+                            </a>
+                             <a href="https://www.whatsapp.com/channel/0029Vb5yZWO1Hsq1iW0DeQ3s" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" className="text-gray-400 hover:text-white transition-colors">
+                                <WhatsAppIcon className="h-6 w-6" />
                             </a>
                         </div>
                     </div>

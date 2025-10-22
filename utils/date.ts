@@ -1,66 +1,68 @@
 /**
- * Converts an Excel serial number date to a JavaScript Date object.
- * Excel stores dates as the number of days since 1900-01-01.
- * @param serial The Excel serial number for the date.
- * @returns A JavaScript Date object.
- */
-function excelSerialToDate(serial: number): Date {
-  // 25569 is the number of days from 1900-01-01 to 1970-01-01 (UTC epoch)
-  const utc_days = serial - 25569;
-  const utc_value = utc_days * 86400; // 86400 seconds in a day
-  const date_info = new Date(utc_value * 1000);
-
-  // Adjust for timezone offset
-  const fractional_day = serial - Math.floor(serial) + 0.0000001;
-  let total_seconds = Math.floor(86400 * fractional_day);
-  const seconds = total_seconds % 60;
-  total_seconds -= seconds;
-  const hours = Math.floor(total_seconds / (60 * 60));
-  const minutes = Math.floor(total_seconds / 60) % 60;
-  
-  return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
-}
-
-
-/**
- * Parses a date value from the spreadsheet which could be a string, number, or Date.
+ * Parses a date value from the spreadsheet which could be a string in various formats 
+ * (DD/MM/YYYY, YYYY-MM-DD, Excel serial) or a Date object.
+ * It's designed to be robust against various formats encountered from CSV exports.
  * @param dateValue The date value from the sheet.
- * @returns A JavaScript Date object or null if invalid.
+ * @returns A JavaScript Date object in UTC or null if invalid.
  */
 function parseDate(dateValue: any): Date | null {
-  if (!dateValue) {
+  if (dateValue === null || dateValue === undefined || String(dateValue).trim() === '') {
     return null;
   }
 
-  let date: Date;
+  // If it's already a valid Date object, return it.
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    return dateValue;
+  }
 
-  if (dateValue instanceof Date) {
-    date = dateValue;
-  } else if (typeof dateValue === 'number' && dateValue > 0) {
-    date = excelSerialToDate(dateValue);
-  } else if (typeof dateValue === 'string') {
-    const parsedDate = new Date(dateValue);
-    if (!isNaN(parsedDate.getTime())) {
-      date = parsedDate;
-    } else {
-      return null;
+  const valueAsString = String(dateValue).trim();
+
+  // Priority 1: Handle DD/MM/YYYY format, common in the source sheet.
+  const dmyMatch = valueAsString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10);
+    const year = parseInt(dmyMatch[3], 10);
+    // Month is 0-indexed in JavaScript's Date constructor.
+    // We use Date.UTC to prevent local timezone from shifting the date.
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (!isNaN(date.getTime())) {
+      return date;
     }
-  } else {
-    return null;
   }
 
-  // Check for invalid date one last time
-  if (isNaN(date.getTime())) {
-    return null;
+  // Priority 2: Attempt to parse as an Excel serial date number.
+  // These are often read as strings from a CSV.
+  if (/^\d+(\.\d+)?$/.test(valueAsString)) {
+    const serial = parseFloat(valueAsString);
+    // A value > 10000 corresponds to a date after 1927, a safe threshold.
+    if (serial > 10000) {
+      // Excel's epoch starts on 1899-12-30 due to a leap year bug.
+      const date = new Date(Date.UTC(1899, 11, 30 + serial));
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
   }
 
-  return date;
+  // Priority 3: Fallback to standard JavaScript Date parsing for other common 
+  // string formats like 'YYYY-MM-DD', 'MM/DD/YYYY', or ISO strings.
+  const parsedDate = new Date(valueAsString);
+  if (!isNaN(parsedDate.getTime())) {
+    // Even if JS parses it successfully, we convert it to a UTC date to ensure consistency
+    // across the app and avoid timezone-related off-by-one-day errors.
+    // new Date() parses based on local time. We extract components and rebuild in UTC.
+    return new Date(Date.UTC(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate()));
+  }
+
+  return null;
 }
 
+
 /**
- * Formats a date value from the spreadsheet into a human-readable string.
+ * Formats a date value from the spreadsheet into a human-readable string (e.g., "Jan 1, 2024").
  * @param dateValue The date value from the sheet.
- * @returns A formatted date string (e.g., "Jan 1, 2024") or "N/A" if invalid.
+ * @returns A formatted date string or "N/A" if invalid.
  */
 export const formatDate = (dateValue: any): string => {
   const date = parseDate(dateValue);
@@ -68,7 +70,10 @@ export const formatDate = (dateValue: any): string => {
     return 'N/A';
   }
 
+  // By parsing to UTC and formatting in UTC, we ensure the date displayed is the one from the sheet,
+  // regardless of the user's local timezone.
   return date.toLocaleDateString('en-US', {
+    timeZone: 'UTC',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -87,5 +92,7 @@ export const formatDateISO = (dateValue: any): string | undefined => {
       return undefined;
     }
     
+    // toISOString always returns a UTC-formatted string (e.g., "2024-12-25T00:00:00.000Z"),
+    // so we just take the date part.
     return date.toISOString().split('T')[0];
 };
