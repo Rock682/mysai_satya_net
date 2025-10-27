@@ -101,8 +101,8 @@ const renderJobDescription = (text: string | undefined) => {
 const renderMarkdown = (text: string) => {
     const blocks = text.split(/(\n\s*\n)/); // Split by blank lines
     
-    const elements = [];
-    let listItems = [];
+    const elements: React.ReactNode[] = [];
+    let listItems: React.ReactNode[] = [];
 
     const flushList = () => {
         if (listItems.length > 0) {
