@@ -43,7 +43,7 @@ export const mockExamsData: MockExam[] = [
     },
     {
         examId: 'RRB-NTPC-MOCK-01',
-        examName: 'RRB NTPC Mock Test – 100 Original MCQs',
+        examName: 'RRB NTPC Mock Test',
         examType: 'RRB',
         totalQuestions: 100,
         durationMinutes: 90,

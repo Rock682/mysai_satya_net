@@ -37,12 +37,12 @@ export const Footer: React.FC = () => {
                     <div>
                         <h3 className="text-lg font-semibold text-white tracking-wider">Follow Us</h3>
                         <div className="flex mt-2 space-x-4">
-                            <a href="#" aria-label="Facebook" className="text-gray-400 hover:text-white transition-colors">
+                            {/* <a href="#" aria-label="Facebook" className="text-gray-400 hover:text-white transition-colors">
                                 <FacebookIcon className="h-6 w-6" />
                             </a>
                             <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-white transition-colors">
                                 <InstagramIcon className="h-6 w-6" />
-                            </a>
+                            </a> */}
                              <a href="https://www.whatsapp.com/channel/0029Vb5yZWO1Hsq1iW0DeQ3s" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" className="text-gray-400 hover:text-white transition-colors">
                                 <WhatsAppIcon className="h-6 w-6" />
                             </a>

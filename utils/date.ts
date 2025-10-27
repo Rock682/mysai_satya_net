@@ -18,13 +18,25 @@ function parseDate(dateValue: any): Date | null {
   const valueAsString = String(dateValue).trim();
 
   // Priority 1: Handle DD/MM/YYYY format, common in the source sheet.
-  const dmyMatch = valueAsString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (dmyMatch) {
-    const day = parseInt(dmyMatch[1], 10);
-    const month = parseInt(dmyMatch[2], 10);
-    const year = parseInt(dmyMatch[3], 10);
+  const dmySlashMatch = valueAsString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmySlashMatch) {
+    const day = parseInt(dmySlashMatch[1], 10);
+    const month = parseInt(dmySlashMatch[2], 10);
+    const year = parseInt(dmySlashMatch[3], 10);
     // Month is 0-indexed in JavaScript's Date constructor.
     // We use Date.UTC to prevent local timezone from shifting the date.
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Handle DD-MM-YYYY format
+  const dmyDashMatch = valueAsString.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (dmyDashMatch) {
+    const day = parseInt(dmyDashMatch[1], 10);
+    const month = parseInt(dmyDashMatch[2], 10);
+    const year = parseInt(dmyDashMatch[3], 10);
     const date = new Date(Date.UTC(year, month - 1, day));
     if (!isNaN(date.getTime())) {
       return date;

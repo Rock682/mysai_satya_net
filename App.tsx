@@ -1,10 +1,9 @@
 
-
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Job } from './types';
 import { Header } from './components/Header';
 import { JobCard } from './components/JobCard';
-import { SearchIcon, ArrowPathIcon, BriefcaseIcon, ArrowLeftIcon, WhatsAppIcon } from './components/IconComponents';
+import { SearchIcon, ArrowLeftIcon } from './components/IconComponents';
 import { formatDateISO } from './utils/date';
 import { JobDetailModal } from './components/JobDetailModal';
 import { JobFilters } from './components/JobFilters';
@@ -20,9 +19,12 @@ import { AboutUsPage } from './components/AboutUsPage';
 import { BajajEmiModal } from './components/BajajEmiModal';
 import { csvToJson } from './utils/csv';
 import { ErrorDisplay } from './components/ErrorDisplay';
-import { CategoryDashboard } from './components/CategoryDashboard';
 import { PromotionalBanner } from './components/PromotionalBanner';
+import { WhatsAppIcon } from './components/IconComponents';
+import { CategoryDashboard } from './components/CategoryDashboard';
+import { FeaturedGiftsSection } from './components/FeaturedGiftsSection';
 import { NewsTicker } from './components/NewsTicker';
+
 
 export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about';
 const validPages: Page[] = ['home', 'contact', 'calculators', 'services', 'gift-articles', 'mock-tests', 'about'];
@@ -75,25 +77,25 @@ const WHATSAPP_CHANNEL_LINK = "https://www.whatsapp.com/channel/0029Vb5yZWO1Hsq1
 const WhatsAppBanner: React.FC = () => {
   return (
     <section 
-      className="mt-2 mb-12 animate-fade-in-up" 
+      className="my-8 animate-fade-in-up" 
       style={{ animationDelay: '300ms' }}
       aria-labelledby="whatsapp-banner-title"
     >
-      <div className="relative bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 rounded-lg p-4 sm:p-6 shadow-lg overflow-hidden">
-        <div className="absolute -bottom-6 -right-6 opacity-10 pointer-events-none">
-          <WhatsAppIcon className="w-32 h-32 text-white" />
+      <div className="relative bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 rounded-lg p-3 sm:p-4 shadow-lg overflow-hidden">
+        <div className="absolute -bottom-4 -right-4 opacity-10 pointer-events-none">
+          <WhatsAppIcon className="w-24 h-24 text-white" />
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 text-white text-center md:text-left">
-          <div className="flex flex-col md:flex-row items-center gap-3">
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-white text-center sm:text-left">
+          <div className="flex items-center gap-3">
             <div className="flex-shrink-0 bg-white/20 p-2 rounded-full">
-              <WhatsAppIcon className="w-6 h-6 text-white" />
+              <WhatsAppIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 id="whatsapp-banner-title" className="text-lg sm:text-xl font-bold">
+              <h2 id="whatsapp-banner-title" className="text-base sm:text-lg font-bold">
                 Get Daily Job Updates on WhatsApp!
               </h2>
-              <p className="mt-1 text-xs sm:text-sm opacity-90">
-                Never miss an opportunity. Join our channel for the latest updates.
+              <p className="mt-1 text-xs opacity-90">
+                Join our channel for the latest job updates.
               </p>
             </div>
           </div>
@@ -101,7 +103,7 @@ const WhatsAppBanner: React.FC = () => {
             href={WHATSAPP_CHANNEL_LINK}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block flex-shrink-0 w-full md:w-auto bg-white text-green-600 font-bold py-2 px-4 rounded-lg shadow-md transition-transform duration-300 ease-in-out hover:bg-gray-100 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/50"
+            className="inline-block flex-shrink-0 w-full sm:w-auto bg-white text-green-600 font-bold py-1.5 px-4 text-sm rounded-lg shadow-md transition-transform duration-300 ease-in-out hover:bg-gray-100 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/50"
           >
             Join Now
           </a>
@@ -121,10 +123,8 @@ const App: React.FC = () => {
   // Filter states
   const [textFilter, setTextFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [selectedDashboardCategory, setSelectedDashboardCategory] = useState<string | null>(null);
   
-  // View state for the home page
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
   // Page navigation state (now driven by URL hash)
   const [path, setPath] = useState(window.location.hash);
   const page = useMemo(() => getPageFromHash(path), [path]);
@@ -166,12 +166,24 @@ const App: React.FC = () => {
   const handleNavigate = (newPage: Page) => {
     // Reset transient state when navigating between main pages
     if (page !== newPage) {
-        setSelectedCategory(null);
         setSelectedJob(null);
         setTextFilter('');
         setCategoryFilter([]);
+        setSelectedDashboardCategory(null);
     }
     window.location.hash = `/${newPage}`;
+  };
+  
+  const handleSelectCategory = (category: string) => {
+    setSelectedDashboardCategory(category);
+    setCategoryFilter([category]);
+    setTextFilter('');
+    window.scrollTo(0, 0);
+  };
+  
+  const handleBackToCategories = () => {
+    setSelectedDashboardCategory(null);
+    setCategoryFilter([]);
   };
 
   const fetchJobs = useCallback(async () => {
@@ -295,68 +307,53 @@ const App: React.FC = () => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
   
-  const jobsByCategory = useMemo(() => {
-    return jobs.reduce((acc, job) => {
-      const category = job.category || 'Other';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(job);
-      return acc;
-    }, {} as Record<string, Job[]>);
+  const allJobCategories = useMemo(() => {
+    const categories = new Set(jobs.map(job => job.category).filter(Boolean) as string[]);
+    return Array.from(categories).sort();
   }, [jobs]);
-
-  const allJobCategories = useMemo(() => Object.keys(jobsByCategory).sort(), [jobsByCategory]);
 
   const filteredJobs = useMemo(() => {
-    let jobsToFilter = jobs;
+    return jobs.filter(job => {
+        const categoryMatch = categoryFilter.length === 0 || (job.category && categoryFilter.includes(job.category));
+        
+        const textMatch = !textFilter ||
+            job.jobTitle.toLowerCase().includes(textFilter.toLowerCase()) ||
+            job.description.toLowerCase().includes(textFilter.toLowerCase());
+        
+        return categoryMatch && textMatch;
+    });
+  }, [jobs, textFilter, categoryFilter]);
 
-    // If a category is selected from the dashboard, start with only those jobs.
-    if (selectedCategory) {
-        jobsToFilter = jobsByCategory[selectedCategory] || [];
-    }
-
-    // Apply text filter.
-    const textFiltered = jobsToFilter.filter(job => 
-      !textFilter ||
-      job.jobTitle.toLowerCase().includes(textFilter.toLowerCase()) ||
-      job.description.toLowerCase().includes(textFilter.toLowerCase())
-    );
-
-    // Apply multi-select category filter only when no category is selected from the dashboard.
-    if (!selectedCategory && categoryFilter.length > 0) {
-      return textFiltered.filter(job => job.category && categoryFilter.includes(job.category));
-    }
-    
-    return textFiltered;
-  }, [jobs, textFilter, categoryFilter, selectedCategory, jobsByCategory]);
+  const sortedJobs = useMemo(() => {
+    return [...jobs]
+      .filter(job => job.jobTitle !== 'No Title')
+      .sort((a, b) => {
+        const dateA = formatDateISO(a.startDate);
+        const dateB = formatDateISO(b.startDate);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA); // Descending sort
+      });
+  }, [jobs]);
 
   const latestJobs = useMemo(() => {
-    return [...jobs]
-        .filter(job => job.jobTitle !== 'No Title')
-        .sort((a, b) => {
-            const dateA = formatDateISO(a.startDate);
-            const dateB = formatDateISO(b.startDate);
-
-            if (!dateA) return 1;
-            if (!dateB) return -1;
-
-            return dateB.localeCompare(dateA); // Descending sort for most recent first
-        })
-        .slice(0, 10);
-  }, [jobs]);
+    return sortedJobs.slice(0, 4);
+  }, [sortedJobs]);
+  
+  const tickerJobs = useMemo(() => {
+    return sortedJobs.slice(0, 10);
+  }, [sortedJobs]);
 
 
   // Accessibility: Announce filter results
   useEffect(() => {
-    if (!isLoading && selectedCategory) { // Only announce when in a list view
-      if (textFilter) {
+    if (!isLoading && (textFilter || categoryFilter.length > 0)) {
         setLiveText(`${filteredJobs.length} jobs found.`);
-      } else {
+    } else {
         setLiveText(''); 
-      }
     }
-  }, [filteredJobs.length, isLoading, textFilter, selectedCategory]);
+  }, [filteredJobs.length, isLoading, textFilter, categoryFilter]);
+
 
   const handleJobClick = (job: Job, event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
     triggerRef.current = event.currentTarget;
@@ -642,15 +639,10 @@ const App: React.FC = () => {
           return (
             <div>
               <JobFiltersSkeleton />
-              <div className="space-y-12">
-                <section>
-                  <div className="h-7 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse mb-4"></div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {Array.from({ length: 8 }).map((_, index) => (
-                      <JobCardSkeleton key={index} />
-                    ))}
-                  </div>
-                </section>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <JobCardSkeleton key={index} />
+                ))}
               </div>
             </div>
           );
@@ -660,96 +652,84 @@ const App: React.FC = () => {
           return <ErrorDisplay message={error} onDismiss={() => setError(null)} onRetry={fetchJobs} />;
         }
 
-        if (!selectedCategory) {
-          return (
+        if (selectedDashboardCategory) {
+            return (
+              <>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+                  <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+                    {`Openings in ${selectedDashboardCategory}`}
+                  </h2>
+                  <button
+                    onClick={handleBackToCategories}
+                    className="flex self-start sm:self-center items-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  >
+                    <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                    All Categories
+                  </button>
+                </div>
+  
+                <JobFilters
+                  textFilter={textFilter}
+                  onTextFilterChange={setTextFilter}
+                  categoryFilter={categoryFilter}
+                  onCategoryFilterChange={setCategoryFilter}
+                  categories={allJobCategories}
+                  showCategoryFilter={true}
+                />
+  
+                {filteredJobs.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {filteredJobs.map((job) => (
+                      <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 px-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg max-w-4xl mx-auto shadow-sm">
+                    <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                    <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">No Matching Jobs Found</h3>
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">
+                      Try adjusting your search filters or check another category.
+                    </p>
+                  </div>
+                )}
+              </>
+            );
+          }
+
+        return (
             <>
               <PromotionalBanner 
                 text="Free mock test for Govt Exams"
                 onClick={() => handleNavigate('mock-tests')}
               />
               
-              {latestJobs.length > 0 && !isLoading && (
-                 <NewsTicker jobs={latestJobs} onItemClick={handleJobClick} />
-              )}
-              
-              {latestJobs.length > 0 && !isLoading && (
-                <section className="mt-2 mb-12 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                    <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6 border-b-2 border-green-200 dark:border-green-800 pb-3">
-                        Latest Updates
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {latestJobs.slice(0, 4).map((job) => (
-                            <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
-                        ))}
-                    </div>
-                </section>
-              )}
-              
-              { !isLoading && <WhatsAppBanner />}
+              <NewsTicker jobs={tickerJobs} onItemClick={handleJobClick} />
 
-              <CategoryDashboard
-                categories={allJobCategories}
-                onSelectCategory={(category) => {
-                  setSelectedCategory(category);
-                  setTextFilter('');
-                  setCategoryFilter([]);
-                }}
-              />
+               <section className="my-8" aria-labelledby="latest-updates-title">
+                <h2 id="latest-updates-title" className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                  Latest Updates
+                </h2>
+                {latestJobs.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {latestJobs.map((job) => (
+                      <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                    ))}
+                  </div>
+                ) : (
+                   <div className="mt-4 text-center py-10 px-6 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-lg">
+                    <p className="text-gray-500 dark:text-gray-400">No new updates right now. Check back soon!</p>
+                  </div>
+                )}
+              </section>
+
+              <FeaturedGiftsSection onNavigate={handleNavigate} />
+
+              <WhatsAppBanner />
+
+              <CategoryDashboard onSelectCategory={handleSelectCategory} />
             </>
-          );
-        }
-
-        return (
-          <>
-            <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <div>
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                  aria-label="Back to all categories"
-                >
-                  <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                  Back to Categories
-                </button>
-                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-2">{selectedCategory}</h2>
-              </div>
-              <button
-                onClick={fetchJobs}
-                disabled={isLoading}
-                className="flex self-start sm:self-center items-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ArrowPathIcon className={`w-5 h-5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
-
-            <JobFilters
-              textFilter={textFilter}
-              onTextFilterChange={setTextFilter}
-              categoryFilter={[]}
-              onCategoryFilterChange={() => {}}
-              categories={[]}
-              showCategoryFilter={false}
-            />
-
-            {filteredJobs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {filteredJobs.map((job) => (
-                  <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 px-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg max-w-4xl mx-auto shadow-sm">
-                <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">No Matching Jobs</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">
-                  No openings found in the "{selectedCategory}" category that match your search criteria.
-                </p>
-                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Try clearing your search filter.</p>
-              </div>
-            )}
-          </>
         );
+
       case 'about':
         return <AboutUsPage />;
       case 'contact':

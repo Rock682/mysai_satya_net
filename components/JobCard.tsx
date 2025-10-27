@@ -18,6 +18,14 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
         e.stopPropagation(); // Prevent modal from opening if it's a link
     }
   };
+  
+  const formattedStartDate = formatDate(job.startDate);
+  const formattedLastDate = formatDate(job.lastDate);
+  const showStartDate = formattedStartDate !== 'N/A';
+  const showLastDate = formattedLastDate !== 'N/A';
+  
+  const categoryLower = job.category?.toLowerCase() || '';
+  const shouldShowDatesSection = (showStartDate || showLastDate) && categoryLower !== 'halltickets' && categoryLower !== 'results';
     
   return (
     <article 
@@ -72,25 +80,29 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
         )}
       </div>
       
-      {job.category !== 'Admit Card' && job.category !== 'Results' && (
+      {shouldShowDatesSection && (
         <div className="relative mt-2 pt-2 border-t border-gray-200 dark:border-slate-700 z-10">
           <div className="grid grid-cols-2 gap-2">
             {/* Start Date Block */}
-            <div>
-              <span className="block text-xs text-gray-500 dark:text-gray-400">Start Date</span>
-              <div className="inline-flex items-center text-xs space-x-1.5 bg-teal-50 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-medium py-0.5 px-2 rounded-full" title={`Start Date: ${formatDate(job.startDate)}`}>
-                  <CalendarDaysIcon className="w-4 h-4 text-teal-500 flex-shrink-0" />
-                  <span className="font-semibold">{formatDate(job.startDate)}</span>
+            {showStartDate ? (
+              <div>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">Start Date</span>
+                <div className="inline-flex items-center text-xs space-x-1.5 bg-teal-50 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-medium py-0.5 px-2 rounded-full" title={`Start Date: ${formattedStartDate}`}>
+                    <CalendarDaysIcon className="w-4 h-4 text-teal-500 flex-shrink-0" />
+                    <span className="font-semibold">{formattedStartDate}</span>
+                </div>
               </div>
-            </div>
+            ) : <div />}
             {/* End Date Block */}
-            <div>
-              <span className="block text-xs text-gray-500 dark:text-gray-400">Last Date</span>
-               <div className="inline-flex items-center text-xs space-x-1.5 bg-rose-50 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300 font-medium py-0.5 px-2 rounded-full" title={`Last Date: ${formatDate(job.lastDate)}`}>
-                  <CalendarDaysIcon className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                  <span className="font-semibold">{formatDate(job.lastDate)}</span>
+            {showLastDate ? (
+              <div>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">Last Date</span>
+                 <div className="inline-flex items-center text-xs space-x-1.5 bg-rose-50 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300 font-medium py-0.5 px-2 rounded-full" title={`Last Date: ${formattedLastDate}`}>
+                    <CalendarDaysIcon className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                    <span className="font-semibold">{formattedLastDate}</span>
+                </div>
               </div>
-            </div>
+            ) : <div />}
           </div>
         </div>
       )}

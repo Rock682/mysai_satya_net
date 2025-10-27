@@ -25,13 +25,73 @@ const renderInlineMarkdown = (text: string) => {
     const linkMatch = part.match(/\[(.*?)\]\((.*?)\)/);
     if (linkMatch) {
       return (
-        <a href={linkMatch[2]} key={index} target="_blank" rel="noopener noreferrer">
+        <a href={linkMatch[2]} key={index} target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:underline">
           {linkMatch[1]}
         </a>
       );
     }
     return part;
   });
+};
+
+/**
+ * Renders a block of text, formatting it with lists and bold headers.
+ */
+const renderJobDescription = (text: string | undefined) => {
+    if (!text) return null;
+
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    let listType: 'ul' | 'ol' | null = null;
+    let listItems: React.ReactNode[] = [];
+
+    const flushList = () => {
+        if (listItems.length > 0) {
+            const ListComponent = listType === 'ul' ? 'ul' : 'ol';
+            const listClasses = listType === 'ul' ? 'list-disc' : 'list-decimal';
+            elements.push(
+                <ListComponent key={`list-${elements.length}`} className={`${listClasses} list-inside space-y-1 my-2 pl-4`}>
+                    {listItems}
+                </ListComponent>
+            );
+            listItems = [];
+        }
+        listType = null;
+    };
+
+    lines.forEach((line, index) => {
+        const trimmedLine = line.trim();
+
+        if (trimmedLine === '') {
+            // Treat blank lines as paragraph breaks
+            flushList();
+            return;
+        }
+
+        const isUnorderedListItem = trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ');
+        const isOrderedListItem = /^\d+\.\s/.test(trimmedLine);
+
+        if (isUnorderedListItem) {
+            if (listType !== 'ul') flushList();
+            listType = 'ul';
+            listItems.push(<li key={index}>{renderInlineMarkdown(trimmedLine.substring(2))}</li>);
+        } else if (isOrderedListItem) {
+            if (listType !== 'ol') flushList();
+            listType = 'ol';
+            listItems.push(<li key={index}>{renderInlineMarkdown(trimmedLine.replace(/^\d+\.\s/, ''))}</li>);
+        } else {
+            flushList();
+            if (trimmedLine.endsWith(':') && trimmedLine.length < 100) { // Check length to avoid formatting long paragraphs
+                elements.push(<p key={index} className="font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-1">{renderInlineMarkdown(trimmedLine)}</p>);
+            } else {
+                elements.push(<p key={index}>{renderInlineMarkdown(trimmedLine)}</p>);
+            }
+        }
+    });
+
+    flushList(); // Flush any remaining list items at the end
+
+    return elements;
 };
 
 
@@ -81,6 +141,14 @@ const renderMarkdown = (text: string) => {
 
 export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, onClose }) => {
     const modalRef = useRef<HTMLDivElement>(null);
+    const formattedStartDate = formatDate(job.startDate);
+    const formattedLastDate = formatDate(job.lastDate);
+    const showStartDate = formattedStartDate !== 'N/A';
+    const showLastDate = formattedLastDate !== 'N/A';
+    
+    const categoryLower = job.category?.toLowerCase() || '';
+    const shouldShowDatesSection = (showStartDate || showLastDate) && categoryLower !== 'halltickets' && categoryLower !== 'results';
+
 
     // Close modal on escape key press
     useEffect(() => {
@@ -167,16 +235,20 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, onClose }) 
                   </div>
                 )}
             </div>
-            {job.category !== 'Admit Card' && job.category !== 'Results' && (
+            {shouldShowDatesSection && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400 pt-1">
-                  <div className="flex items-center space-x-2">
-                      <CalendarDaysIcon className="w-4 h-4 text-teal-500" />
-                      <span>Start: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatDate(job.startDate)}</span></span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                      <CalendarDaysIcon className="w-4 h-4 text-rose-500" />
-                      <span>End: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatDate(job.lastDate)}</span></span>
-                  </div>
+                  {showStartDate && (
+                      <div className="flex items-center space-x-2">
+                          <CalendarDaysIcon className="w-4 h-4 text-teal-500" />
+                          <span>Start: <span className="font-semibold text-gray-700 dark:text-gray-300">{formattedStartDate}</span></span>
+                      </div>
+                  )}
+                  {showLastDate && (
+                      <div className="flex items-center space-x-2">
+                          <CalendarDaysIcon className="w-4 h-4 text-rose-500" />
+                          <span>End: <span className="font-semibold text-gray-700 dark:text-gray-300">{formattedLastDate}</span></span>
+                      </div>
+                  )}
               </div>
             )}
           </div>
@@ -193,14 +265,17 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, onClose }) 
         <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-y-auto">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 border-b dark:border-slate-700 pb-2">Description</h3>
-            <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{job.description}</p>
-
+            <div className="text-gray-600 dark:text-gray-300 leading-relaxed space-y-2">
+                {renderJobDescription(job.description)}
+            </div>
           </div>
 
           {job.responsibilities && (
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 border-b dark:border-slate-700 pb-2">Responsibilities</h3>
-              <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{job.responsibilities}</p>
+              <div className="text-gray-600 dark:text-gray-300 leading-relaxed space-y-2">
+                {renderJobDescription(job.responsibilities)}
+              </div>
             </div>
           )}
 
