@@ -24,6 +24,7 @@ import { WhatsAppIcon } from './components/IconComponents';
 import { CategoryDashboard } from './components/CategoryDashboard';
 import { FeaturedGiftsSection } from './components/FeaturedGiftsSection';
 import { NewsTicker } from './components/NewsTicker';
+import { trackPageView } from './utils/analytics';
 
 
 export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about';
@@ -368,7 +369,7 @@ const App: React.FC = () => {
     setIsBajajModalOpen(false);
   };
   
-  // SEO: Dynamically update page title and all meta tags
+  // SEO & Analytics: Dynamically update page title, meta tags, and track page views
   useEffect(() => {
     let title = 'Sai Satya Net | Job Openings';
     let description = "Explore current job openings at Sai Satya Net. Your one-stop solution for internet services & customized gift articles.";
@@ -412,6 +413,7 @@ const App: React.FC = () => {
     }
     
     updateMetaTags(title, description, keywords, path);
+    trackPageView(path, title);
     
   }, [selectedJob, page, path]);
 

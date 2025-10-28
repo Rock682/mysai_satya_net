@@ -30,9 +30,13 @@ const getZodiacSign = (date: Date): { sign: string; emoji: string } => {
 };
 
 const AgeCalculator: React.FC = () => {
+    const today = new Date();
     const [day, setDay] = useState<string>('');
     const [month, setMonth] = useState<string>('');
     const [year, setYear] = useState<string>('');
+    const [asOfDay, setAsOfDay] = useState<string>(String(today.getDate()));
+    const [asOfMonth, setAsOfMonth] = useState<string>(String(today.getMonth() + 1));
+    const [asOfYear, setAsOfYear] = useState<string>(String(today.getFullYear()));
     const [result, setResult] = useState<AgeResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -45,58 +49,85 @@ const AgeCalculator: React.FC = () => {
         totalHours: number;
         totalMinutes: number;
         zodiacSign: { sign: string; emoji: string };
+        asOfDateString: string;
     }
 
     const calculateAge = () => {
+        // 1. Validate and parse Date of Birth
         const dayNum = parseInt(day, 10);
         const monthNum = parseInt(month, 10);
         const yearNum = parseInt(year, 10);
 
         if (!day || !month || !year || isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
-            setError('Please enter a valid day, month, and year.');
+            setError('Please enter a valid date of birth.');
             setResult(null);
             return;
         }
-        
-        if (yearNum < 1900 || yearNum > new Date().getFullYear()) {
-            setError('Please enter a valid year.');
+        if (yearNum < 1900 || yearNum > 9999) {
+            setError('Please enter a valid birth year.');
             setResult(null);
             return;
         }
-
         if (monthNum < 1 || monthNum > 12) {
-            setError('Please enter a valid month (1-12).');
+            setError('Please enter a valid birth month (1-12).');
             setResult(null);
             return;
         }
-
-        const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
-        if (dayNum < 1 || dayNum > daysInMonth) {
-            setError(`Please enter a valid day for the selected month (1-${daysInMonth}).`);
+        const daysInBirthMonth = new Date(yearNum, monthNum, 0).getDate();
+        if (dayNum < 1 || dayNum > daysInBirthMonth) {
+            setError(`Please enter a valid day for the selected birth month (1-${daysInBirthMonth}).`);
             setResult(null);
             return;
         }
-
         const birthDate = new Date(yearNum, monthNum - 1, dayNum);
-        const today = new Date();
-        
-        if (birthDate > today) {
-            setError('Date of birth cannot be in the future.');
+        birthDate.setHours(0, 0, 0, 0);
+
+        // 2. Validate and parse "As of" date
+        const asOfDayNum = parseInt(asOfDay, 10);
+        const asOfMonthNum = parseInt(asOfMonth, 10);
+        const asOfYearNum = parseInt(asOfYear, 10);
+
+        if (!asOfDay || !asOfMonth || !asOfYear || isNaN(asOfDayNum) || isNaN(asOfMonthNum) || isNaN(asOfYearNum)) {
+            setError('Please enter a valid "as of" date.');
+            setResult(null);
+            return;
+        }
+        if (asOfYearNum < 1900 || asOfYearNum > 9999) {
+            setError('Please enter a valid "as of" year.');
+            setResult(null);
+            return;
+        }
+        if (asOfMonthNum < 1 || asOfMonthNum > 12) {
+            setError('Please enter a valid "as of" month (1-12).');
+            setResult(null);
+            return;
+        }
+        const daysInAsOfMonth = new Date(asOfYearNum, asOfMonthNum, 0).getDate();
+        if (asOfDayNum < 1 || asOfDayNum > daysInAsOfMonth) {
+            setError(`Please enter a valid day for the selected "as of" month (1-${daysInAsOfMonth}).`);
+            setResult(null);
+            return;
+        }
+        const toDate = new Date(asOfYearNum, asOfMonthNum - 1, asOfDayNum);
+        toDate.setHours(0, 0, 0, 0);
+
+        // 3. Final validation
+        if (birthDate > toDate) {
+            setError('The "as of" date must be after the date of birth.');
             setResult(null);
             return;
         }
         
         setError(null);
         
-        today.setHours(0,0,0,0);
-
-        let years = today.getFullYear() - birthDate.getFullYear();
-        let months = today.getMonth() - birthDate.getMonth();
-        let days = today.getDate() - birthDate.getDate();
+        // 4. Calculation logic
+        let years = toDate.getFullYear() - birthDate.getFullYear();
+        let months = toDate.getMonth() - birthDate.getMonth();
+        let days = toDate.getDate() - birthDate.getDate();
 
         if (days < 0) {
             months--;
-            const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            const lastMonth = new Date(toDate.getFullYear(), toDate.getMonth(), 0);
             days += lastMonth.getDate();
         }
 
@@ -105,13 +136,15 @@ const AgeCalculator: React.FC = () => {
             months += 12;
         }
         
-        const totalDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+        const totalDays = Math.floor((toDate.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
         const totalWeeks = Math.floor(totalDays / 7);
         const totalHours = totalDays * 24;
         const totalMinutes = totalHours * 60;
         const zodiac = getZodiacSign(birthDate);
 
-        setResult({ years, months, days, totalWeeks, totalDays, totalHours, totalMinutes, zodiacSign: zodiac });
+        const asOfDateFormatted = toDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        setResult({ years, months, days, totalWeeks, totalDays, totalHours, totalMinutes, zodiacSign: zodiac, asOfDateString: asOfDateFormatted });
     };
 
     const handleNumericInput = (setter: React.Dispatch<React.SetStateAction<string>>, maxLength: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,10 +154,17 @@ const AgeCalculator: React.FC = () => {
         }
     };
 
+    const setToToday = () => {
+        const today = new Date();
+        setAsOfDay(String(today.getDate()));
+        setAsOfMonth(String(today.getMonth() + 1));
+        setAsOfYear(String(today.getFullYear()));
+    };
+
     return (
         <div>
             <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
-                Enter your date of birth to instantly calculate your precise age in years, months, and days.
+                Enter your date of birth and specify the date you want to calculate your age for. Perfect for job applications with age cut-offs.
             </p>
             <div className="space-y-4" id="age-calculator-input">
                 <div>
@@ -175,6 +215,62 @@ const AgeCalculator: React.FC = () => {
                         />
                     </div>
                 </div>
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <label htmlFor="asof-day" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Calculate Age as of
+                        </label>
+                        <button
+                            onClick={setToToday}
+                            className="text-xs font-semibold text-green-600 dark:text-green-400 hover:underline focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
+                        >
+                            Use Today
+                        </button>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={2}
+                            id="asof-day"
+                            name="asof-day"
+                            value={asOfDay}
+                            onChange={handleNumericInput(setAsOfDay, 2)}
+                            placeholder="DD"
+                            className="block w-full h-10 text-center px-2 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-green-500 sm:text-sm"
+                            aria-label="As of Day"
+                        />
+                        <span className="text-gray-500 dark:text-gray-400 font-semibold text-lg">/</span>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={2}
+                            id="asof-month"
+                            name="asof-month"
+                            value={asOfMonth}
+                            onChange={handleNumericInput(setAsOfMonth, 2)}
+                            placeholder="MM"
+                            className="block w-full h-10 text-center px-2 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-green-500 sm:text-sm"
+                            aria-label="As of Month"
+                        />
+                        <span className="text-gray-500 dark:text-gray-400 font-semibold text-lg">/</span>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={4}
+                            id="asof-year"
+                            name="asof-year"
+                            value={asOfYear}
+                            onChange={handleNumericInput(setAsOfYear, 4)}
+                            placeholder="YYYY"
+                            className="block w-full h-10 text-center px-2 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-green-500 sm:text-sm"
+                            aria-label="As of Year"
+                        />
+                    </div>
+                </div>
                 <button
                     id="age-calculator-button"
                     onClick={calculateAge}
@@ -197,7 +293,7 @@ const AgeCalculator: React.FC = () => {
 
             {result && (
                 <div id="age-calculator-result" className="mt-8 border-t border-gray-200 dark:border-slate-700 pt-6 animate-fade-in-up" aria-live="polite">
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 text-center">Your Result</h3>
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 text-center">Your Age as of {result.asOfDateString}</h3>
                     <div className="mt-4 p-6 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
                         <p className="text-center text-gray-800 dark:text-gray-100">
                            <span className="text-4xl font-bold text-green-600 dark:text-green-400">{result.years}</span> years, 
