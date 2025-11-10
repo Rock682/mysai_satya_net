@@ -4,7 +4,7 @@ import { giftCategories } from '../data/gifts';
 import { GiftCard } from './GiftCard';
 
 
-export const GiftArticlesPage: React.FC = () => {
+const GiftArticlesPage: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto animate-fade-in-up">
             <div className="text-center mb-12">
@@ -40,3 +40,5 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+export default GiftArticlesPage;

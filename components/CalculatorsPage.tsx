@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { CalculatorIcon, CalendarDaysIcon, AlertTriangleIcon, PercentIcon, ArrowLeftIcon } from './IconComponents';
 
@@ -432,7 +431,7 @@ const CalculatorSelectionCard: React.FC<{
 
 
 // --- Main Page Component ---
-export const CalculatorsPage: React.FC = () => {
+const CalculatorsPage: React.FC = () => {
     const [activeCalculator, setActiveCalculator] = useState<'age' | 'percentage' | null>(null);
 
     const calculators = {
@@ -528,3 +527,5 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+export default CalculatorsPage;

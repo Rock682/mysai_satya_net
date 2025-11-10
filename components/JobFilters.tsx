@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useId } from 'react';
 import { SearchIcon, ChevronDownIcon, Squares2x2Icon, XMarkIcon } from './IconComponents';
 
@@ -157,6 +158,33 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
   showCategoryFilter = true,
 }) => {
   const searchInputId = useId();
+  const [internalText, setInternalText] = useState(textFilter);
+
+  // Sync internal state if the parent filter state changes (e.g., from "Clear")
+  useEffect(() => {
+    setInternalText(textFilter);
+  }, [textFilter]);
+  
+  const handleSearch = () => {
+    onTextFilterChange(internalText);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInternalText(value);
+    // If user clears the input, immediately clear results without waiting for button click
+    if (value === '') {
+      onTextFilterChange('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission if it's inside a form
+      handleSearch();
+    }
+  };
+
   const showClearButton = textFilter || categoryFilter.length > 0;
 
   const handleClearFilters = () => {
@@ -179,10 +207,20 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
             id={searchInputId}
             type="text"
             placeholder="Search by title or description..."
-            value={textFilter}
-            onChange={(e) => onTextFilterChange(e.target.value)}
-            className="block w-full h-10 pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm"
+            value={internalText}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            className="block w-full h-10 pl-10 pr-24 py-2 border border-gray-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm"
           />
+           <div className="absolute inset-y-0 right-0 flex items-center pr-1.5">
+            <button
+                onClick={handleSearch}
+                className="inline-flex items-center justify-center h-8 px-4 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                aria-label="Search jobs"
+            >
+                Search
+            </button>
+          </div>
         </div>
 
         {/* Category Multiselect */}

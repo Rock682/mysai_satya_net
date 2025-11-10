@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { EnvelopeIcon, MapPinIcon, PhoneIcon, WhatsAppIcon } from './IconComponents';
 
-export const ContactPage: React.FC = () => {
+const ContactPage: React.FC = () => {
     return (
         <div className="bg-white dark:bg-slate-800 max-w-4xl mx-auto p-6 sm:p-8 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm animate-fade-in-up">
             <div className="text-center">
@@ -110,3 +109,5 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+export default ContactPage;

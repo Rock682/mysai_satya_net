@@ -5,7 +5,7 @@
  * @param dateValue The date value from the sheet.
  * @returns A JavaScript Date object in UTC or null if invalid.
  */
-function parseDate(dateValue: any): Date | null {
+export function parseDate(dateValue: any): Date | null {
   if (dateValue === null || dateValue === undefined || String(dateValue).trim() === '') {
     return null;
   }

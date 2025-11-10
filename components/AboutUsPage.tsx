@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BriefcaseIcon, GiftIcon, AcademicCapIcon, UserCircleIcon } from './IconComponents';
 
@@ -10,7 +9,7 @@ const StatCard: React.FC<{ Icon: React.FC<any>, title: string, children: React.R
     </div>
 );
 
-export const AboutUsPage: React.FC = () => {
+const AboutUsPage: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto animate-fade-in-up">
             <header className="text-center mb-12">
@@ -86,3 +85,5 @@ if (!document.getElementById('about-us-styles')) {
     `;
     document.head.appendChild(style);
 }
+
+export default AboutUsPage;

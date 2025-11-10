@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
     IdentificationIcon, 
@@ -97,7 +96,7 @@ const ServiceCard: React.FC<{ category: typeof serviceCategories[0] }> = ({ cate
     </div>
 );
 
-export const ServicesPage: React.FC = () => {
+const ServicesPage: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto animate-fade-in-up">
             <div className="text-center mb-12">
@@ -128,3 +127,5 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+export default ServicesPage;

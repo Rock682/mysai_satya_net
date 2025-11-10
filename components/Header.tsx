@@ -14,7 +14,6 @@ interface HeaderProps {
 
 const navLinks: { page: Page; label: string; Icon?: React.FC<React.SVGProps<SVGSVGElement>>; iconClassName?: string }[] = [
     { page: 'home', label: 'Home' },
-    { page: 'mock-tests', label: 'Mock Tests', Icon: AcademicCapIcon, iconClassName: 'h-5 w-5' },
     { page: 'calculators', label: 'Calculators', Icon: CalculatorIcon, iconClassName: 'h-4 w-4' },
     { page: 'gift-articles', label: 'Gift Articles' },
     { page: 'services', label: 'Services' },

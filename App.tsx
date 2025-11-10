@@ -1,21 +1,14 @@
-
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Job } from './types';
 import { Header } from './components/Header';
 import { JobCard } from './components/JobCard';
 import { SearchIcon, ArrowLeftIcon } from './components/IconComponents';
-import { formatDateISO } from './utils/date';
+import { formatDateISO, parseDate } from './utils/date';
 import { JobDetailModal } from './components/JobDetailModal';
 import { JobFilters } from './components/JobFilters';
-import { ContactPage } from './components/ContactPage';
-import { CalculatorsPage } from './components/CalculatorsPage';
 import { Footer } from './components/Footer';
 import { JobCardSkeleton } from './components/JobCardSkeleton';
 import { JobFiltersSkeleton } from './components/JobFiltersSkeleton';
-import { ServicesPage } from './components/ServicesPage';
-import { GiftArticlesPage } from './components/GiftArticlesPage';
-import { MockTestsPage, mockExamsData } from './components/MockTestsPage';
-import { AboutUsPage } from './components/AboutUsPage';
 import { BajajEmiModal } from './components/BajajEmiModal';
 import { csvToJson } from './utils/csv';
 import { ErrorDisplay } from './components/ErrorDisplay';
@@ -25,10 +18,20 @@ import { CategoryDashboard } from './components/CategoryDashboard';
 import { FeaturedGiftsSection } from './components/FeaturedGiftsSection';
 import { NewsTicker } from './components/NewsTicker';
 import { trackPageView } from './utils/analytics';
+import { WhatsAppFloat } from './components/WhatsAppFloat';
+import { mockExamsData } from './data/mockExams';
+
+// Lazy load page components for code splitting
+const AboutUsPage = lazy(() => import('./components/AboutUsPage'));
+const ContactPage = lazy(() => import('./components/ContactPage'));
+const CalculatorsPage = lazy(() => import('./components/CalculatorsPage'));
+const ServicesPage = lazy(() => import('./components/ServicesPage'));
+const GiftArticlesPage = lazy(() => import('./components/GiftArticlesPage'));
+const MockTestsPage = lazy(() => import('./components/MockTestsPage'));
 
 
-export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'mock-tests' | 'about';
-const validPages: Page[] = ['home', 'contact', 'calculators', 'services', 'gift-articles', 'mock-tests', 'about'];
+export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'about';
+const validPages: Page[] = ['home', 'contact', 'calculators', 'services', 'gift-articles', 'about'];
 
 /**
  * Derives the current page from the URL hash.
@@ -113,6 +116,12 @@ const WhatsAppBanner: React.FC = () => {
     </section>
   );
 };
+
+const PageLoader: React.FC = () => (
+    <div className="flex justify-center items-center py-20" aria-label="Loading page content">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-400"></div>
+    </div>
+);
 
 
 const App: React.FC = () => {
@@ -342,7 +351,17 @@ const App: React.FC = () => {
   }, [sortedJobs]);
   
   const tickerJobs = useMemo(() => {
-    return sortedJobs.slice(0, 10);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set time to the start of the day for comparison
+
+    return sortedJobs
+      .filter(job => {
+        const lastDate = parseDate(job.lastDate);
+        // If there's no last date, or the date is invalid, we include it.
+        // If there is a last date, it must be on or after today.
+        return !lastDate || lastDate >= today;
+      })
+      .slice(0, 10);
   }, [sortedJobs]);
 
 
@@ -406,10 +425,6 @@ const App: React.FC = () => {
       title = 'Custom Gift Articles | Sai Satya Net';
       description = "Discover our unique collection of customized gift articles, including photo mugs, custom t-shirts, personalized frames, and more. Perfect for any occasion.";
       keywords = "custom gifts, photo mugs, personalized t-shirts, gift shop, garividi";
-    } else if (page === 'mock-tests') {
-      title = 'Mock Tests | Sai Satya Net';
-      description = "Prepare for competitive exams like SSC and Banking with our free online mock tests. Get detailed performance analysis and improve your scores.";
-      keywords = "ssc mock test, online exam practice, free mock test, competitive exams, banking exams";
     }
     
     updateMetaTags(title, description, keywords, path);
@@ -569,25 +584,6 @@ const App: React.FC = () => {
           "telephone": "+91-8977846407",
           "url": url
         };
-    } else if (page === 'mock-tests') {
-        schema = {
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            "name": "Online Mock Tests for Competitive Exams",
-            "description": "Prepare for SSC and Banking exams with free online mock tests from Sai Satya Net.",
-            "itemListElement": mockExamsData
-              .filter(exam => exam.published === 'TRUE')
-              .map((exam, index) => ({
-                "@type": "ListItem",
-                "position": index + 1,
-                "item": {
-                    "@type": "Quiz",
-                    "name": exam.examName,
-                    "description": `A practice test for ${exam.examType} exams with ${exam.totalQuestions} questions.`,
-                    "timeRequired": `PT${exam.durationMinutes}M`
-                }
-              }))
-          };
     }
       
     if (schema) {
@@ -697,38 +693,65 @@ const App: React.FC = () => {
               </>
             );
           }
+        
+        const filtersAreActive = textFilter.length > 0 || categoryFilter.length > 0;
 
         return (
             <>
-              <PromotionalBanner 
-                text="Free mock test for Govt Exams"
-                onClick={() => handleNavigate('mock-tests')}
+              <JobFilters
+                textFilter={textFilter}
+                onTextFilterChange={setTextFilter}
+                categoryFilter={categoryFilter}
+                onCategoryFilterChange={setCategoryFilter}
+                categories={allJobCategories}
+                showCategoryFilter={true}
               />
-              
-              <NewsTicker jobs={tickerJobs} onItemClick={handleJobClick} />
 
-               <section className="my-8" aria-labelledby="latest-updates-title">
-                <h2 id="latest-updates-title" className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">
-                  Latest Updates
-                </h2>
-                {latestJobs.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {latestJobs.map((job) => (
-                      <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
-                    ))}
-                  </div>
-                ) : (
-                   <div className="mt-4 text-center py-10 px-6 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-lg">
-                    <p className="text-gray-500 dark:text-gray-400">No new updates right now. Check back soon!</p>
-                  </div>
-                )}
-              </section>
-
-              <FeaturedGiftsSection onNavigate={handleNavigate} />
-
-              <WhatsAppBanner />
-
-              <CategoryDashboard onSelectCategory={handleSelectCategory} />
+              {filtersAreActive ? (
+                <>
+                  <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+                    Search Results
+                  </h2>
+                  {filteredJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {filteredJobs.map((job) => (
+                        <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 px-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg max-w-4xl mx-auto shadow-sm">
+                      <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                      <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">No Matching Jobs Found</h3>
+                      <p className="mt-2 text-gray-500 dark:text-gray-400">
+                        Try adjusting your search filters or check another category.
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <NewsTicker jobs={tickerJobs} onItemClick={handleJobClick} />
+                  <section className="my-8" aria-labelledby="latest-updates-title">
+                    <h2 id="latest-updates-title" className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                      Latest Updates
+                    </h2>
+                    {latestJobs.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {latestJobs.map((job) => (
+                          <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-4 text-center py-10 px-6 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-lg">
+                        <p className="text-gray-500 dark:text-gray-400">No new updates right now. Check back soon!</p>
+                      </div>
+                    )}
+                  </section>
+                  <FeaturedGiftsSection onNavigate={handleNavigate} />
+                  <WhatsAppBanner />
+                  <CategoryDashboard onSelectCategory={handleSelectCategory} />
+                </>
+              )}
             </>
         );
 
@@ -742,8 +765,6 @@ const App: React.FC = () => {
         return <GiftArticlesPage />;
       case 'calculators':
         return <CalculatorsPage />;
-      case 'mock-tests':
-        return <MockTestsPage />;
       default:
         return <div>Page not found</div>;
     }
@@ -757,12 +778,15 @@ const App: React.FC = () => {
         {liveText}
       </div>
       <main id="main-content" className="container mx-auto px-4 py-6 sm:py-8 flex-grow" aria-busy={isLoading}>
-        {renderPage()}
+        <Suspense fallback={<PageLoader />}>
+            {renderPage()}
+        </Suspense>
       </main>
       
       {selectedJob && <JobDetailModal job={selectedJob} onClose={handleCloseModal} />}
       {isBajajModalOpen && <BajajEmiModal isOpen={isBajajModalOpen} onClose={handleCloseBajajModal} />}
       <Footer />
+      <WhatsAppFloat />
     </div>
   );
 };
