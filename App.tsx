@@ -388,7 +388,7 @@ const App: React.FC = () => {
     setIsBajajModalOpen(false);
   };
   
-  // SEO & Analytics: Dynamically update page title, meta tags, and track page views
+  // SEO: Dynamically update page title and meta tags
   useEffect(() => {
     let title = 'Sai Satya Net | Job Openings';
     let description = "Explore current job openings at Sai Satya Net. Your one-stop solution for internet services & customized gift articles.";
@@ -428,9 +428,28 @@ const App: React.FC = () => {
     }
     
     updateMetaTags(title, description, keywords, path);
-    trackPageView(path, title);
     
   }, [selectedJob, page, path]);
+
+  // Analytics: Track page views for SPA navigation
+  useEffect(() => {
+    let title = 'Sai Satya Net | Job Openings';
+
+    // Determine title based on the page, NOT the selected job modal for consistent analytics
+    if (page === 'about') {
+      title = 'About Us | Sai Satya Net';
+    } else if (page === 'contact') {
+      title = 'Contact Us | Sai Satya Net';
+    } else if (page === 'calculators') {
+      title = 'Calculators | Sai Satya Net';
+    } else if (page === 'services') {
+      title = 'Our Services | Sai Satya Net';
+    } else if (page === 'gift-articles') {
+      title = 'Custom Gift Articles | Sai Satya Net';
+    }
+    
+    trackPageView(path, title);
+  }, [page, path]);
 
 
   // SEO: Inject JSON-LD structured data
