@@ -21,6 +21,7 @@ import { trackPageView } from './utils/analytics';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { mockExamsData } from './data/mockExams';
 import { mockProductsData } from './data/mockProducts';
+import { SuggestionModal } from './components/SuggestionModal';
 
 // Lazy load page components for code splitting
 const AboutUsPage = lazy(() => import('./components/AboutUsPage'));
@@ -150,8 +151,9 @@ const App: React.FC = () => {
   // Accessibility state
   const [liveText, setLiveText] = useState('');
   
-  // Bajaj EMI Modal state
+  // Modal states
   const [isBajajModalOpen, setIsBajajModalOpen] = useState(false);
+  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
   // Ref to store the element that triggered the modal for focus return
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -380,13 +382,14 @@ const App: React.FC = () => {
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
-        const categoryMatch = categoryFilter.length === 0 || (job.category && categoryFilter.includes(job.category));
-        
-        const textMatch = !textFilter ||
-            job.jobTitle.toLowerCase().includes(textFilter.toLowerCase()) ||
-            job.description.toLowerCase().includes(textFilter.toLowerCase());
-        
-        return categoryMatch && textMatch;
+      const textMatch = !textFilter ||
+        job.jobTitle.toLowerCase().includes(textFilter.toLowerCase()) ||
+        job.description.toLowerCase().includes(textFilter.toLowerCase());
+      
+      const categoryMatch = categoryFilter.length === 0 || 
+        (job.category && categoryFilter.includes(job.category));
+      
+      return textMatch && categoryMatch;
     });
   }, [jobs, textFilter, categoryFilter]);
 
@@ -444,6 +447,15 @@ const App: React.FC = () => {
     setIsBajajModalOpen(false);
   };
   
+  const handleOpenSuggestionModal = (event: React.MouseEvent<HTMLButtonElement>) => {
+    triggerRef.current = event.currentTarget;
+    setIsSuggestionModalOpen(true);
+  };
+
+  const handleCloseSuggestionModal = () => {
+    setIsSuggestionModalOpen(false);
+  };
+
   const handleMockTestBannerClick = () => {
     window.open(MOCK_TEST_LINK, '_blank', 'rel=noopener,noreferrer');
   };
@@ -675,7 +687,7 @@ const App: React.FC = () => {
     const main = document.getElementById('main-content');
     const footer = document.getElementById('app-footer');
     
-    const isModalOpen = !!selectedJob || isBajajModalOpen;
+    const isModalOpen = !!selectedJob || isBajajModalOpen || isSuggestionModalOpen;
 
     if (isModalOpen) {
       document.body.style.overflow = 'hidden';
@@ -701,7 +713,7 @@ const App: React.FC = () => {
       main?.removeAttribute('aria-hidden');
       footer?.removeAttribute('aria-hidden');
     };
-  }, [selectedJob, isBajajModalOpen]);
+  }, [selectedJob, isBajajModalOpen, isSuggestionModalOpen]);
 
 
   const renderPage = () => {
@@ -865,7 +877,8 @@ const App: React.FC = () => {
       
       {selectedJob && <JobDetailModal job={selectedJob} onClose={handleCloseModal} />}
       {isBajajModalOpen && <BajajEmiModal isOpen={isBajajModalOpen} onClose={handleCloseBajajModal} />}
-      <Footer />
+      {isSuggestionModalOpen && <SuggestionModal isOpen={isSuggestionModalOpen} onClose={handleCloseSuggestionModal} />}
+      <Footer onSuggestionClick={handleOpenSuggestionModal} />
       <WhatsAppFloat />
     </div>
   );

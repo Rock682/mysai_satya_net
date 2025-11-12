@@ -1,11 +1,15 @@
 import React from 'react';
 import { EnvelopeIcon, PhoneIcon, FacebookIcon, InstagramIcon, WhatsAppIcon } from './IconComponents';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+    onSuggestionClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onSuggestionClick }) => {
     return (
         <footer id="app-footer" className="bg-gray-800 dark:bg-slate-900 text-gray-300">
             <div className="container mx-auto px-4 py-8 sm:py-10">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* About Section */}
                     <div className="md:col-span-1">
                         <h3 className="text-lg font-semibold text-white tracking-wider">Sai Satya Net</h3>
@@ -37,16 +41,27 @@ export const Footer: React.FC = () => {
                     <div>
                         <h3 className="text-lg font-semibold text-white tracking-wider">Follow Us</h3>
                         <div className="flex mt-2 space-x-4">
-                            {/* <a href="#" aria-label="Facebook" className="text-gray-400 hover:text-white transition-colors">
-                                <FacebookIcon className="h-6 w-6" />
-                            </a>
-                            <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-white transition-colors">
+                            <a href="https://www.instagram.com/saisatyanet/?igsh=Nm80MzZlZDlqZ2Jv#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-white transition-colors">
                                 <InstagramIcon className="h-6 w-6" />
-                            </a> */}
+                            </a>
                              <a href="https://www.whatsapp.com/channel/0029Vb5yZWO1Hsq1iW0DeQ3s" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" className="text-gray-400 hover:text-white transition-colors">
                                 <WhatsAppIcon className="h-6 w-6" />
                             </a>
                         </div>
+                    </div>
+
+                    {/* Feedback Section */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-white tracking-wider">Feedback</h3>
+                        <p className="mt-2 text-sm text-gray-400">
+                            Have a suggestion? We'd love to hear it. Help us improve our services.
+                        </p>
+                        <button
+                            onClick={onSuggestionClick}
+                            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-green-500"
+                        >
+                            Leave a Suggestion
+                        </button>
                     </div>
                 </div>
 
