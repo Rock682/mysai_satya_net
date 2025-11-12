@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect, useId } from 'react';
-import { SearchIcon, ChevronDownIcon, Squares2x2Icon, XMarkIcon } from './IconComponents';
+import { SearchIcon, ChevronDownIcon, Squares2x2Icon, XMarkIcon, ChevronUpIcon } from './IconComponents';
 
 interface JobFiltersProps {
   textFilter: string;
@@ -99,11 +98,11 @@ const MultiSelectDropdown: React.FC<{
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
                 aria-controls={listboxId}
-                className="flex items-center justify-between w-full h-10 pl-3 pr-2 text-left bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                className="flex items-center justify-between w-full h-9 pl-3 pr-2 text-left bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
             >
                 <div className="flex items-center">
                     <Icon className="h-5 w-5 text-gray-400 dark:text-gray-400 mr-2" aria-hidden="true" />
-                    <span className="text-sm text-gray-700 dark:text-gray-200">
+                    <span className="text-sm text-gray-700 dark:text-gray-200 truncate">
                         {selected.length > 0 ? `${placeholder} (${selected.length})` : placeholder}
                     </span>
                 </div>
@@ -159,6 +158,7 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
 }) => {
   const searchInputId = useId();
   const [internalText, setInternalText] = useState(textFilter);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Sync internal state if the parent filter state changes (e.g., from "Clear")
   useEffect(() => {
@@ -185,7 +185,7 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
     }
   };
 
-  const showClearButton = textFilter || categoryFilter.length > 0;
+  const activeFilterCount = categoryFilter.length + (textFilter ? 1 : 0);
 
   const handleClearFilters = () => {
     onTextFilterChange('');
@@ -193,63 +193,100 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
   };
 
   return (
-    <div className="sticky md:static top-14 sm:top-16 md:top-auto z-10 mb-8 p-4 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm transition-all duration-300">
-      <div className="flex flex-col md:flex-row md:items-center gap-4">
-        {/* Search Input */}
-        <div className="relative flex-grow">
-          <label htmlFor={searchInputId} className="sr-only">
-            Search by title or description
-          </label>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            id={searchInputId}
-            type="text"
-            placeholder="Search by title or description..."
-            value={internalText}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            className="block w-full h-10 pl-10 pr-24 py-2 border border-gray-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm"
-          />
-           <div className="absolute inset-y-0 right-0 flex items-center pr-1.5">
-            <button
-                onClick={handleSearch}
-                className="inline-flex items-center justify-center h-8 px-4 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                aria-label="Search jobs"
-            >
-                Search
-            </button>
-          </div>
-        </div>
-
-        {/* Category Multiselect */}
-        {showCategoryFilter && (
-            <div className="md:w-64 flex-shrink-0">
-                <MultiSelectDropdown
-                    options={categories}
-                    selected={categoryFilter}
-                    onChange={onCategoryFilterChange}
-                    placeholder="Category"
-                    Icon={Squares2x2Icon}
-                />
+    <div className="sticky md:static top-14 sm:top-16 md:top-auto z-10 mb-4 p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm transition-all duration-300">
+      {!isExpanded ? (
+        // --- Minimized View ---
+        <div className="flex items-center justify-between gap-4">
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="flex items-center text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+            aria-label="Show search and filter options"
+            aria-expanded="false"
+          >
+            <SearchIcon className="h-5 w-5 mr-2" />
+            <span>Search & Filter</span>
+          </button>
+          {activeFilterCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full" aria-live="polite">
+                {activeFilterCount} {activeFilterCount > 1 ? 'filters' : 'filter'} active
+              </span>
+              <button
+                onClick={handleClearFilters}
+                className="flex-shrink-0 text-xs font-semibold text-red-600 dark:text-red-400 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+                aria-label="Clear all filters"
+              >
+                Clear
+              </button>
             </div>
-        )}
-
-        {/* Clear Filters Button */}
-        {showClearButton && (
-             <div className="flex-shrink-0">
+          )}
+        </div>
+      ) : (
+        // --- Expanded View ---
+        <div className="flex flex-col md:flex-row md:items-center gap-2">
+            {/* Search Input */}
+            <div className="relative flex-grow">
+              <label htmlFor={searchInputId} className="sr-only">
+                Search by title or description
+              </label>
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                id={searchInputId}
+                type="text"
+                placeholder="Search by title or description..."
+                value={internalText}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="block w-full h-9 pl-10 pr-20 py-2 border border-gray-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 sm:text-sm"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-1">
                 <button
-                    onClick={handleClearFilters}
-                    className="w-full md:w-auto h-10 flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                    aria-label="Clear all filters"
+                    onClick={handleSearch}
+                    className="inline-flex items-center justify-center h-7 px-3 text-xs font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                    aria-label="Search jobs"
                 >
-                    <XMarkIcon className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" />
-                    Clear
+                    Search
+                </button>
+              </div>
+            </div>
+
+            {/* Category Multiselect */}
+            {showCategoryFilter && (
+                <div className="md:w-56 flex-shrink-0">
+                    <MultiSelectDropdown
+                        options={categories}
+                        selected={categoryFilter}
+                        onChange={onCategoryFilterChange}
+                        placeholder="Category"
+                        Icon={Squares2x2Icon}
+                    />
+                </div>
+            )}
+
+            {/* Action Buttons */}
+             <div className="flex items-center gap-2 flex-shrink-0">
+                {activeFilterCount > 0 && (
+                    <button
+                        onClick={handleClearFilters}
+                        className="h-9 flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                        aria-label="Clear all filters"
+                    >
+                        <XMarkIcon className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-400" />
+                        Clear
+                    </button>
+                )}
+                 <button
+                    onClick={() => setIsExpanded(false)}
+                    className="h-9 w-9 flex items-center justify-center px-2 py-1 border border-transparent rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-slate-200 bg-gray-100 dark:bg-slate-600 hover:bg-gray-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+                    aria-label="Hide filters"
+                >
+                    <ChevronUpIcon className="w-5 h-5" />
                 </button>
             </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

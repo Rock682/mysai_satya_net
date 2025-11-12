@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ExcelIcon, CalculatorIcon, AcademicCapIcon, Bars3Icon, XMarkIcon, SunIcon, MoonIcon, ComputerDesktopIcon } from './IconComponents';
+import { ExcelIcon, CalculatorIcon, AcademicCapIcon, Bars3Icon, XMarkIcon, SunIcon, MoonIcon, ComputerDesktopIcon, ShoppingCartIcon } from './IconComponents';
 import { Page } from '../App';
 
 type Theme = 'light' | 'dark' | 'system';
@@ -16,6 +16,7 @@ const navLinks: { page: Page; label: string; Icon?: React.FC<React.SVGProps<SVGS
     { page: 'home', label: 'Home' },
     { page: 'calculators', label: 'Calculators', Icon: CalculatorIcon, iconClassName: 'h-4 w-4' },
     { page: 'gift-articles', label: 'Gift Articles' },
+    { page: 'store', label: 'Store', Icon: ShoppingCartIcon, iconClassName: 'h-4 w-4' },
     { page: 'services', label: 'Services' },
     { page: 'about', label: 'About Us' },
     { page: 'contact', label: 'Contact' },

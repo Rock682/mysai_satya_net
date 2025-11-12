@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Job } from '../types';
-import { CalendarDaysIcon, XMarkIcon, MapPinIcon, BriefcaseIcon } from './IconComponents';
+import { CalendarDaysIcon, XMarkIcon, BriefcaseIcon, ArrowDownTrayIcon } from './IconComponents';
 import { formatDate } from '../utils/date';
 
 interface JobDetailModalProps {
@@ -147,7 +147,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, onClose }) 
     const showLastDate = formattedLastDate !== 'N/A';
     
     const categoryLower = job.category?.toLowerCase() || '';
-    const shouldShowDatesSection = (showStartDate || showLastDate) && categoryLower !== 'halltickets' && categoryLower !== 'results';
+    const shouldShowDatesSection = (showStartDate || showLastDate) && !['halltickets', 'results', 'counselling'].includes(categoryLower);
 
 
     // Close modal on escape key press
@@ -222,12 +222,6 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, onClose }) 
                 )}
             </h2>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
-                {job.location && (
-                  <div className="flex items-center space-x-2">
-                    <MapPinIcon className="w-4 h-4 text-gray-400" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">{job.location}</span>
-                  </div>
-                )}
                  {job.employmentType && (
                   <div className="flex items-center space-x-2">
                     <BriefcaseIcon className="w-4 h-4 text-gray-400" />
@@ -263,6 +257,19 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, onClose }) 
 
         {/* Body */}
         <div className="flex-1 p-4 sm:p-6 space-y-6 overflow-y-auto">
+          {job.syllabusLink && (
+            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-slate-700">
+                <a 
+                    href={job.syllabusLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center w-full px-4 py-3 text-base font-bold text-center text-white bg-green-600 rounded-lg shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                >
+                    <ArrowDownTrayIcon className="w-5 h-5 mr-3" />
+                    Download Syllabus
+                </a>
+            </div>
+          )}
           <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 border-b dark:border-slate-700 pb-2">Description</h3>
             <div className="text-gray-600 dark:text-gray-300 leading-relaxed space-y-2">

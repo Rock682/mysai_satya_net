@@ -16,7 +16,7 @@ export const NewsTicker: React.FC<NewsTickerProps> = ({ jobs, onItemClick }) => 
   const animationDuration = `${jobs.length * 5}s`;
 
   return (
-    <div className="relative group flex overflow-hidden bg-white dark:bg-slate-800 border-y border-gray-200 dark:border-slate-700 mt-8 mb-2 shadow-sm">
+    <div className="relative group flex overflow-hidden bg-white dark:bg-slate-800 border-y border-gray-200 dark:border-slate-700 mb-2 shadow-sm">
       <div 
         className="flex animate-marquee"
         style={{ animationPlayState: 'running', animationDuration }}

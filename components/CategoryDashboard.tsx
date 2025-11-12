@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CategoryCard } from './CategoryCard';
 import { 
@@ -18,6 +19,7 @@ const getCategoryIcon = (category: string) => {
     if (lowerCaseCategory.includes('rrb')) return BriefcaseIcon; 
     if (lowerCaseCategory.includes('ibps')) return BuildingLibraryIcon;
     if (lowerCaseCategory.includes('admission')) return AcademicCapIcon;
+    if (lowerCaseCategory.includes('counselling')) return AcademicCapIcon;
     if (lowerCaseCategory.includes('hallticket')) return IdentificationIcon;
     if (lowerCaseCategory.includes('result')) return CheckCircleIcon;
     if (lowerCaseCategory.includes('govt')) return BuildingLibraryIcon;
@@ -31,7 +33,8 @@ const mainCategories = [
     'ADMISSION',
     'RESULTS',
     'HALLTICKETS',
-    'STATE GOVT JOBS'
+    'STATE GOVT JOBS',
+    'COUNSELLING'
 ];
 
 export const CategoryDashboard: React.FC<CategoryDashboardProps> = ({ onSelectCategory }) => {

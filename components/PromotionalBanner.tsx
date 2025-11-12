@@ -49,7 +49,7 @@ export const PromotionalBanner: React.FC<PromotionalBannerProps> = ({ text, onCl
   return (
     <div
       onClick={onClick}
-      className="group relative bg-gradient-to-r from-teal-500 to-green-600 dark:from-teal-600 dark:to-green-700 text-white rounded-lg p-4 mb-8 shadow-lg cursor-pointer transition-transform duration-300 hover:scale-[1.02] overflow-hidden shimmer-overlay"
+      className="group relative bg-gradient-to-r from-teal-500 to-green-600 dark:from-teal-600 dark:to-green-700 text-white rounded-lg p-4 mb-4 shadow-lg cursor-pointer transition-transform duration-300 hover:scale-[1.02] overflow-hidden shimmer-overlay"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}

@@ -6,7 +6,7 @@ export interface Job {
   startDate: any;
   salary?: string;
   responsibilities?: string;
-  location?: string;
+  syllabusLink?: string;
   employmentType?: string;
   requiredDocuments?: string;
   sourceSheetLink?: string;
@@ -14,9 +14,18 @@ export interface Job {
   category?: string;
 }
 
+export interface Product {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  affiliateLink: string;
+  category: string;
+}
+
 export interface MockExam {
   examId: string;
-  examName: string;
+  examName:string;
   examType: string;
   totalQuestions: number;
   durationMinutes: number;

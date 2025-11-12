@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Job } from '../types';
-import { CalendarDaysIcon, MapPinIcon, BriefcaseIcon } from './IconComponents';
+import { CalendarDaysIcon, BriefcaseIcon, ArrowDownTrayIcon } from './IconComponents';
 import { formatDate } from '../utils/date';
 
 
@@ -25,7 +25,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
   const showLastDate = formattedLastDate !== 'N/A';
   
   const categoryLower = job.category?.toLowerCase() || '';
-  const shouldShowDatesSection = (showStartDate || showLastDate) && categoryLower !== 'halltickets' && categoryLower !== 'results';
+  const shouldShowDatesSection = (showStartDate || showLastDate) && !['halltickets', 'results', 'counselling'].includes(categoryLower);
     
   return (
     <article 
@@ -66,12 +66,6 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
       </div>
 
        <div className="relative mt-2 space-y-1 z-10 text-sm">
-        {job.location && (
-          <div className="flex items-center text-gray-500 dark:text-gray-400">
-            <MapPinIcon className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400 dark:text-gray-500" />
-            <span>{job.location}</span>
-          </div>
-        )}
         {job.employmentType && (
           <div className="flex items-center text-gray-500 dark:text-gray-400">
             <BriefcaseIcon className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400 dark:text-gray-500" />
@@ -104,6 +98,21 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
               </div>
             ) : <div />}
           </div>
+        </div>
+      )}
+
+      {job.syllabusLink && (
+        <div className="relative mt-3 pt-3 border-t border-gray-200 dark:border-slate-700 z-10">
+          <a
+            href={job.syllabusLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center w-full px-3 py-2 text-sm font-semibold text-center text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+            Download Syllabus
+          </a>
         </div>
       )}
     </article>
