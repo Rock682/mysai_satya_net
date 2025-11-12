@@ -375,23 +375,12 @@ const App: React.FC = () => {
   
   const allJobCategories = useMemo(() => {
     const categories = new Set(jobs.map(job => job.category).filter(Boolean) as string[]);
-    // Add 'SYLLABUS' as a virtual category if any job has a syllabus link
-    if (jobs.some(job => job.syllabusLink)) {
-        categories.add('SYLLABUS');
-    }
     return Array.from(categories).sort();
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
-        let categoryMatch = categoryFilter.length === 0;
-        if (!categoryMatch) {
-            // A job matches if its own category is selected
-            const jobCategoryMatch = job.category && categoryFilter.includes(job.category);
-            // OR if 'SYLLABUS' is selected and the job has a syllabus link
-            const syllabusCategoryMatch = categoryFilter.includes('SYLLABUS') && !!job.syllabusLink;
-            categoryMatch = jobCategoryMatch || syllabusCategoryMatch;
-        }
+        const categoryMatch = categoryFilter.length === 0 || (job.category && categoryFilter.includes(job.category));
         
         const textMatch = !textFilter ||
             job.jobTitle.toLowerCase().includes(textFilter.toLowerCase()) ||
@@ -616,4 +605,270 @@ const App: React.FC = () => {
             "@context": "https://schema.org",
             "@type": "ItemList",
             "name": "Sai Satya Net Services",
-            "
+            "description": "A comprehensive list of services provided by Sai Satya Net.",
+            "itemListElement": serviceList.map((service, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                    "@type": "Service",
+                    "name": service,
+                    "provider": {
+                        "@type": "Organization",
+                        "name": "Sai Satya Net"
+                    }
+                }
+            }))
+        };
+    } else if (page === 'gift-articles' || page === 'store') {
+        const giftList = ["Photo Mugs", "Custom T-Shirts", "Personalized Photo Frames", "Custom Keychains", "Photo Pillows", "Personalized Wall Clocks"];
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Sai Satya Net Gift Articles",
+            "description": "A collection of customizable gift articles available at Sai Satya Net.",
+            "itemListElement": giftList.map((gift, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "item": {
+                    "@type": "Product",
+                    "name": gift,
+                    "description": `Personalized ${gift.toLowerCase()} perfect for any occasion.`,
+                    "brand": {
+                        "@type": "Brand",
+                        "name": "Sai Satya Net"
+                    }
+                }
+            }))
+        };
+    } else if (page === 'contact') {
+        schema = {
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          "name": "Sai Satya Net",
+          "description": "Your one-stop solution for internet services & customized gift articles.",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Beside Bridge Down, Garividi",
+            "addressLocality": "Vizianagaram",
+            "addressRegion": "Andhra Pradesh",
+            "postalCode": "535101",
+            "addressCountry": "IN"
+          },
+          "email": "saisatyanet1@gmail.com",
+          "telephone": "+91-8977846407",
+          "url": url
+        };
+    }
+      
+    if (schema) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.type = 'application/ld+json';
+      script.innerHTML = JSON.stringify(schema);
+      document.head.appendChild(script);
+    }
+  }, [jobs, page, path]);
+
+  // Accessibility & Modal state management
+  useEffect(() => {
+    const header = document.getElementById('app-header');
+    const main = document.getElementById('main-content');
+    const footer = document.getElementById('app-footer');
+    
+    const isModalOpen = !!selectedJob || isBajajModalOpen;
+
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      header?.setAttribute('aria-hidden', 'true');
+      main?.setAttribute('aria-hidden', 'true');
+      footer?.setAttribute('aria-hidden', 'true');
+    } else {
+      // Modal is closed
+      document.body.style.overflow = 'auto';
+      header?.removeAttribute('aria-hidden');
+      main?.removeAttribute('aria-hidden');
+      footer?.removeAttribute('aria-hidden');
+      // Return focus to the element that opened the modal
+      if (triggerRef.current) {
+          triggerRef.current.focus();
+          triggerRef.current = null; // Clear ref after focus is returned
+      }
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+      header?.removeAttribute('aria-hidden');
+      main?.removeAttribute('aria-hidden');
+      footer?.removeAttribute('aria-hidden');
+    };
+  }, [selectedJob, isBajajModalOpen]);
+
+
+  const renderPage = () => {
+    switch(page) {
+      case 'home':
+        if (isLoading) {
+          return (
+            <div>
+              <JobFiltersSkeleton />
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <JobCardSkeleton key={index} />
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        if (error) {
+          return <ErrorDisplay message={error} onDismiss={() => setError(null)} onRetry={fetchJobs} />;
+        }
+
+        if (selectedDashboardCategory) {
+            return (
+              <>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+                  <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
+                    {`Openings in ${selectedDashboardCategory}`}
+                  </h2>
+                  <button
+                    onClick={handleBackToCategories}
+                    className="flex self-start sm:self-center items-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  >
+                    <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                    All Categories
+                  </button>
+                </div>
+  
+                <JobFilters
+                  textFilter={textFilter}
+                  onTextFilterChange={setTextFilter}
+                  categoryFilter={categoryFilter}
+                  onCategoryFilterChange={setCategoryFilter}
+                  categories={allJobCategories}
+                  showCategoryFilter={true}
+                />
+  
+                {filteredJobs.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {filteredJobs.map((job) => (
+                      <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 px-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg max-w-4xl mx-auto shadow-sm">
+                    <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                    <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">No Matching Jobs Found</h3>
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">
+                      Try adjusting your search filters or check another category.
+                    </p>
+                  </div>
+                )}
+              </>
+            );
+          }
+        
+        const filtersAreActive = textFilter.length > 0 || categoryFilter.length > 0;
+
+        return (
+            <>
+              <JobFilters
+                textFilter={textFilter}
+                onTextFilterChange={setTextFilter}
+                categoryFilter={categoryFilter}
+                onCategoryFilterChange={setCategoryFilter}
+                categories={allJobCategories}
+                showCategoryFilter={true}
+              />
+
+              {filtersAreActive ? (
+                <>
+                  <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+                    Search Results
+                  </h2>
+                  {filteredJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {filteredJobs.map((job) => (
+                        <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 px-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg max-w-4xl mx-auto shadow-sm">
+                      <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                      <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">No Matching Jobs Found</h3>
+                      <p className="mt-2 text-gray-500 dark:text-gray-400">
+                        Try adjusting your search filters or check another category.
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <PromotionalBanner 
+                    text="Attempt Free Mock Tests for All Competitive Exams Now!"
+                    onClick={handleMockTestBannerClick}
+                  />
+                  <NewsTicker jobs={tickerJobs} onItemClick={handleJobClick} />
+                  <section className="my-8" aria-labelledby="latest-updates-title">
+                    <h2 id="latest-updates-title" className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                      Latest Updates
+                    </h2>
+                    {latestJobs.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {latestJobs.map((job) => (
+                          <JobCard key={job.id} job={job} onClick={(e) => handleJobClick(job, e)} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-4 text-center py-10 px-6 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-lg">
+                        <p className="text-gray-500 dark:text-gray-400">No new updates right now. Check back soon!</p>
+                      </div>
+                    )}
+                  </section>
+                  <FeaturedGiftsSection onNavigate={handleNavigate} />
+                  <WhatsAppBanner />
+                  <CategoryDashboard onSelectCategory={handleSelectCategory} />
+                </>
+              )}
+            </>
+        );
+
+      case 'about':
+        return <AboutUsPage />;
+      case 'contact':
+        return <ContactPage />;
+      case 'services':
+        return <ServicesPage />;
+      case 'gift-articles':
+        return <GiftArticlesPage />;
+      case 'calculators':
+        return <CalculatorsPage />;
+      case 'store':
+        return <AffiliatePage products={products} isLoading={isLoading} />;
+      default:
+        return <div>Page not found</div>;
+    }
+  };
+
+
+  return (
+    <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200 flex flex-col">
+      <Header currentPage={page} onNavigate={handleNavigate} theme={theme} setTheme={setTheme} />
+      <div className="sr-only" aria-live="polite" role="status">
+        {liveText}
+      </div>
+      <main id="main-content" className="container mx-auto px-4 py-6 sm:py-8 flex-grow" aria-busy={isLoading}>
+        <Suspense fallback={<PageLoader />}>
+            {renderPage()}
+        </Suspense>
+      </main>
+      
+      {selectedJob && <JobDetailModal job={selectedJob} onClose={handleCloseModal} />}
+      {isBajajModalOpen && <BajajEmiModal isOpen={isBajajModalOpen} onClose={handleCloseBajajModal} />}
+      <Footer />
+      <WhatsAppFloat />
+    </div>
+  );
+};
+
+export default App;
