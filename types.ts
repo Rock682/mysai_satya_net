@@ -52,3 +52,5 @@ export interface UserAnswer {
   selectedOption: string | null;
   status: 'answered' | 'unanswered' | 'review';
 }
+
+export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'about' | 'store';

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useId } from 'react';
-import { SearchIcon, ChevronDownIcon, Squares2x2Icon, XMarkIcon, ChevronUpIcon } from './IconComponents';
+import { SearchIcon, ChevronDownIcon, Squares2x2Icon, XMarkIcon, ChevronUpIcon, ArrowPathIcon } from './IconComponents';
 
 interface JobFiltersProps {
   textFilter: string;
@@ -8,6 +8,8 @@ interface JobFiltersProps {
   onCategoryFilterChange: (values: string[]) => void;
   categories: string[];
   showCategoryFilter?: boolean;
+  onRefetch: () => void;
+  isRefetching: boolean;
 }
 
 const MultiSelectDropdown: React.FC<{
@@ -155,12 +157,13 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
   onCategoryFilterChange,
   categories,
   showCategoryFilter = true,
+  onRefetch,
+  isRefetching,
 }) => {
   const searchInputId = useId();
   const [internalText, setInternalText] = useState(textFilter);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Sync internal state if the parent filter state changes (e.g., from "Clear")
   useEffect(() => {
     setInternalText(textFilter);
   }, [textFilter]);
@@ -172,7 +175,6 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInternalText(value);
-    // If user clears the input, immediately clear results without waiting for button click
     if (value === '') {
       onTextFilterChange('');
     }
@@ -180,7 +182,7 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Prevent form submission if it's inside a form
+      e.preventDefault(); 
       handleSearch();
     }
   };
@@ -195,8 +197,7 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
   return (
     <div className="sticky md:static top-14 sm:top-16 md:top-auto z-10 mb-4 p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm transition-all duration-300">
       {!isExpanded ? (
-        // --- Minimized View ---
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           <button
             onClick={() => setIsExpanded(true)}
             className="flex items-center text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-green-600 dark:hover:text-green-400 transition-colors"
@@ -206,25 +207,34 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
             <SearchIcon className="h-5 w-5 mr-2" />
             <span>Search & Filter</span>
           </button>
-          {activeFilterCount > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full" aria-live="polite">
-                {activeFilterCount} {activeFilterCount > 1 ? 'filters' : 'filter'} active
-              </span>
-              <button
-                onClick={handleClearFilters}
-                className="flex-shrink-0 text-xs font-semibold text-red-600 dark:text-red-400 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
-                aria-label="Clear all filters"
-              >
-                Clear
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+                onClick={onRefetch}
+                disabled={isRefetching}
+                className="h-8 w-8 flex-shrink-0 flex items-center justify-center p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Refresh job list"
+                title="Refresh job list"
+            >
+                <ArrowPathIcon className={`h-5 w-5 ${isRefetching ? 'animate-spin' : ''}`} />
+            </button>
+            {activeFilterCount > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full" aria-live="polite">
+                  {activeFilterCount} {activeFilterCount > 1 ? 'filters' : 'filter'} active
+                </span>
+                <button
+                  onClick={handleClearFilters}
+                  className="flex-shrink-0 text-xs font-semibold text-red-600 dark:text-red-400 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+                  aria-label="Clear all filters"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
-        // --- Expanded View ---
         <div className="flex flex-col md:flex-row md:items-center gap-2">
-            {/* Search Input */}
             <div className="relative flex-grow">
               <label htmlFor={searchInputId} className="sr-only">
                 Search by title or description
@@ -252,7 +262,6 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
               </div>
             </div>
 
-            {/* Category Multiselect */}
             {showCategoryFilter && (
                 <div className="md:w-56 flex-shrink-0">
                     <MultiSelectDropdown
@@ -265,8 +274,16 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
                 </div>
             )}
 
-            {/* Action Buttons */}
              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                    onClick={onRefetch}
+                    disabled={isRefetching}
+                    className="h-9 w-9 flex items-center justify-center border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Refresh job list"
+                    title="Refresh job list"
+                >
+                    <ArrowPathIcon className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`} />
+                </button>
                 {activeFilterCount > 0 && (
                     <button
                         onClick={handleClearFilters}

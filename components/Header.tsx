@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { ExcelIcon, CalculatorIcon, AcademicCapIcon, Bars3Icon, XMarkIcon, SunIcon, MoonIcon, ComputerDesktopIcon, ShoppingCartIcon } from './IconComponents';
-import { Page } from '../App';
+import { Page } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
 
 type Theme = 'light' | 'dark' | 'system';
 
 interface HeaderProps {
     currentPage: Page;
     onNavigate: (page: Page) => void;
-    theme: Theme;
-    setTheme: (theme: Theme) => void;
 }
 
 const navLinks: { page: Page; label: string; Icon?: React.FC<React.SVGProps<SVGSVGElement>>; iconClassName?: string }[] = [
@@ -54,8 +52,9 @@ const ThemeSwitcher: React.FC<{ theme: Theme, setTheme: (theme: Theme) => void, 
     );
 };
 
-export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate, theme, setTheme }) => {
+export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { theme, setTheme } = useTheme();
 
     const handleNavigate = (page: Page) => {
         onNavigate(page);

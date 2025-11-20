@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Job } from '../types';
 import { CalendarDaysIcon, BriefcaseIcon, ArrowDownTrayIcon } from './IconComponents';
@@ -26,21 +25,28 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
   
   const categoryLower = job.category?.toLowerCase() || '';
   const shouldShowDatesSection = (showStartDate || showLastDate) && !['halltickets', 'results', 'counselling'].includes(categoryLower);
+  
+  // Check if this is the special RRB Group-D job
+  const isSpecialJob = job.id === 'static-rrb-group-d';
     
   return (
     <article 
       onClick={onClick}
-      className="group relative bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-lg hover:border-green-400 dark:hover:border-green-500 hover:-translate-y-1 overflow-hidden cursor-pointer"
+      className={`group relative bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4 flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 overflow-hidden cursor-pointer
+        ${isSpecialJob 
+          ? 'border-2 border-red-500 dark:border-red-400 ring-2 ring-red-50 dark:ring-red-900/20' 
+          : 'border border-gray-200 dark:border-slate-700 hover:border-green-400 dark:hover:border-green-500'}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick(e)}
       aria-label={`View details for ${job.jobTitle}`}
     >
       {/* Decorative Accent */}
-      <div className="absolute top-0 right-0 -mt-8 -mr-8 h-24 w-24 bg-green-50 dark:bg-green-900/20 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500 ease-in-out"></div>
+      <div className={`absolute top-0 right-0 -mt-8 -mr-8 h-24 w-24 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500 ease-in-out
+        ${isSpecialJob ? 'bg-red-100 dark:bg-red-900/40' : 'bg-green-50 dark:bg-green-900/20'}`}></div>
       
       <div className="relative flex-grow z-10">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
+        <h3 className={`text-lg font-bold transition-colors duration-300 ${isSpecialJob ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'}`}>
            {job.sourceSheetLink ? (
             <a 
               href={job.sourceSheetLink}
@@ -69,7 +75,21 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
         {job.employmentType && (
           <div className="flex items-center text-gray-500 dark:text-gray-400">
             <BriefcaseIcon className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400 dark:text-gray-500" />
-            <span className="inline-block bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">{job.employmentType}</span>
+             {isSpecialJob ? (
+                <a 
+                  href={job.sourceSheetLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-red-600 text-white hover:bg-red-700 animate-pulse shadow-sm transition-colors"
+                >
+                    {job.employmentType}
+                </a>
+            ) : (
+                <span className="inline-block bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    {job.employmentType}
+                </span>
+            )}
           </div>
         )}
       </div>

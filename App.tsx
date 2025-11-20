@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { Job, Product } from './types';
+import { Job, Product, Page } from './types';
 import { Header } from './components/Header';
 import { JobCard } from './components/JobCard';
 import { SearchIcon, ArrowLeftIcon } from './components/IconComponents';
@@ -10,7 +10,6 @@ import { Footer } from './components/Footer';
 import { JobCardSkeleton } from './components/JobCardSkeleton';
 import { JobFiltersSkeleton } from './components/JobFiltersSkeleton';
 import { BajajEmiModal } from './components/BajajEmiModal';
-import { csvToJson } from './utils/csv';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { PromotionalBanner } from './components/PromotionalBanner';
 import { WhatsAppIcon } from './components/IconComponents';
@@ -22,6 +21,7 @@ import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { mockExamsData } from './data/mockExams';
 import { mockProductsData } from './data/mockProducts';
 import { SuggestionModal } from './components/SuggestionModal';
+import { useJobs } from './hooks/useJobs';
 
 // Lazy load page components for code splitting
 const AboutUsPage = lazy(() => import('./components/AboutUsPage'));
@@ -33,7 +33,6 @@ const MockTestsPage = lazy(() => import('./components/MockTestsPage'));
 const AffiliatePage = lazy(() => import('./components/AffiliatePage'));
 
 
-export type Page = 'home' | 'contact' | 'calculators' | 'services' | 'gift-articles' | 'about' | 'store';
 const validPages: Page[] = ['home', 'contact', 'calculators', 'services', 'gift-articles', 'about', 'store'];
 
 /**
@@ -129,24 +128,22 @@ const PageLoader: React.FC = () => (
 
 
 const App: React.FC = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  // Page navigation state (now driven by URL hash)
+  const [path, setPath] = useState(window.location.hash);
+  const page = useMemo(() => getPageFromHash(path), [path]);
+  
+  // Data-fetching via custom hooks
+  const { jobs, error, isLoading, refetch: refetchJobs, setError } = useJobs(page === 'home');
   const [products, setProducts] = useState<Product[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [areProductsLoading, setAreProductsLoading] = useState<boolean>(true);
+  
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   // Filter states
   const [textFilter, setTextFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [selectedDashboardCategory, setSelectedDashboardCategory] = useState<string | null>(null);
-  
-  // Page navigation state (now driven by URL hash)
-  const [path, setPath] = useState(window.location.hash);
-  const page = useMemo(() => getPageFromHash(path), [path]);
-
-  // Theme state
-  type Theme = 'light' | 'dark' | 'system';
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
   
   // Accessibility state
   const [liveText, setLiveText] = useState('');
@@ -202,103 +199,17 @@ const App: React.FC = () => {
     setCategoryFilter([]);
   };
 
-  const fetchJobs = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    setJobs([]);
-
-    // IMPORTANT: Replace this with your public Google Sheet URL.
-    // It must be shared as "Anyone with the link" and end with "/export?format=csv".
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/1rovDxCJ58N9bGdbHlrXP-l1uxdRR4F1GxO19QsWm-vs/export?format=csv";
-
-    if (!sheetUrl || sheetUrl.includes('YOUR_GOOGLE_SHEET_EXPORT_URL_HERE')) {
-        setError("Configuration Error: The Google Sheet URL is missing. Please contact the site administrator to configure it correctly.");
-        setIsLoading(false);
-        return;
-    }
-
-    try {
-        const response = await fetch(sheetUrl);
-        
-        if (!response.ok) {
-            throw new Error(`Failed to fetch sheet data. Status: ${response.statusText}. Ensure the URL is correct and the sheet is public.`);
-        }
-        
-        let csvText = await response.text();
-        
-        // Remove Byte Order Mark (BOM) if present, as it can interfere with parsing
-        if (csvText.charCodeAt(0) === 0xFEFF) {
-            csvText = csvText.substring(1);
-        }
-
-        const json = csvToJson(csvText);
-
-        if (json.length === 0) {
-            setJobs([]);
-            setIsLoading(false);
-            return;
-        }
-
-        // Check for required headers to ensure the sheet is formatted correctly
-        const actualHeaders = Object.keys(json[0]).map(h => h.toLowerCase().trim());
-        const requiredHeaders = ['job title', 'description', 'last date', 'start date', 'category'];
-        const missingHeaders = requiredHeaders.filter(h => !actualHeaders.includes(h));
-
-        if (missingHeaders.length > 0) {
-            throw new Error(`Data Format Error: The spreadsheet is missing the following required columns: ${missingHeaders.join(', ')}. Please correct the sheet format.`);
-        }
-
-        const parsedJobs: Job[] = json.map((row: any, index: number) => ({
-            id: row['id'] || `job-${index}`,
-            jobTitle: row['job title'] || 'No Title',
-            description: row['description'] || 'No Description',
-            category: row['category'] || 'Other',
-            lastDate: row['last date'],
-            startDate: row['start date'],
-            salary: row['salary'],
-            responsibilities: row['responsibilities'],
-            syllabusLink: row['syllabuslink'],
-            employmentType: row['employment type'] || row['job type'],
-            requiredDocuments: row['required documents'],
-            sourceSheetLink: row['link'],
-            blogContent: row['blog content'],
-        }));
-        
-        setJobs(parsedJobs);
-
-    } catch (err) {
-        console.error("Error fetching or parsing jobs:", err);
-        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred while fetching jobs.";
-
-        if (errorMessage.toLowerCase().includes('failed to fetch')) {
-             setError('Network Error: Could not connect to the data source. Please check your internet connection and try again. If the problem persists, the data sheet may be private or unavailable.');
-        } else {
-             setError(errorMessage);
-        }
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
   const fetchProducts = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setAreProductsLoading(true);
+    setProductsError(null);
     setProducts([]);
-
-    // --- Developer Note ---
-    // This section uses mock data. To use a Google Sheet, create a new sheet
-    // in your document, publish it to the web as CSV, and get its unique 'gid'.
-    // Then, replace the mock data logic with a fetch call similar to fetchJobs,
-    // using a URL like: `https://docs.google.com/spreadsheets/d/YOUR_DOC_ID/export?format=csv&gid=YOUR_SHEET_GID`
     
     try {
-        // Simulate an API call
         await new Promise(resolve => setTimeout(resolve, 500)); 
         
-        // Use mock data
         if (mockProductsData.length === 0) {
             setProducts([]);
-            setIsLoading(false);
+            setAreProductsLoading(false);
             return;
         }
 
@@ -324,56 +235,31 @@ const App: React.FC = () => {
     } catch (err) {
         console.error("Error fetching or parsing products:", err);
         const errorMessage = err instanceof Error ? err.message : "An unknown error occurred while fetching products.";
-        setError(errorMessage);
+        setProductsError(errorMessage);
     } finally {
-        setIsLoading(false);
+        setAreProductsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (page === 'home') {
-        fetchJobs();
-    } else if (page === 'store') {
+    // useJobs hook handles fetching for the 'home' page based on its `enabled` state.
+    if (page === 'store') {
         fetchProducts();
     }
-  }, [page, fetchJobs, fetchProducts]);
+  }, [page, fetchProducts]);
   
   // Effect to show Bajaj EMI modal on homepage visit
   useEffect(() => {
     let timer: number;
-    // Show the modal on the home page after the initial load is complete.
-    // It will reappear every time the user navigates back to the home page.
     if (page === 'home' && !isLoading) {
       timer = window.setTimeout(() => {
         setIsBajajModalOpen(true);
       }, 3000); // 3-second delay
     } else {
-      // If not on the home page or currently loading, ensure the modal is closed.
       setIsBajajModalOpen(false);
     }
-    
-    // Cleanup: clear the timer if the user navigates away before it fires.
     return () => clearTimeout(timer);
   }, [page, isLoading]);
-
-  // Effect to handle theme changes
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    root.classList.toggle('dark', isDark);
-    localStorage.setItem('theme', theme);
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-        if (theme === 'system') {
-            root.classList.toggle('dark', mediaQuery.matches);
-        }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
   
   const allJobCategories = useMemo(() => {
     const categories = new Set(jobs.map(job => job.category).filter(Boolean) as string[]);
@@ -411,13 +297,11 @@ const App: React.FC = () => {
   
   const tickerJobs = useMemo(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set time to the start of the day for comparison
+    today.setHours(0, 0, 0, 0); 
 
     return sortedJobs
       .filter(job => {
         const lastDate = parseDate(job.lastDate);
-        // If there's no last date, or the date is invalid, we include it.
-        // If there is a last date, it must be on or after today.
         return !lastDate || lastDate >= today;
       })
       .slice(0, 10);
@@ -510,7 +394,6 @@ const App: React.FC = () => {
   useEffect(() => {
     let title = 'Sai Satya Net | Job Openings';
 
-    // Determine title based on the page, NOT the selected job modal for consistent analytics
     if (page === 'about') {
       title = 'About Us | Sai Satya Net';
     } else if (page === 'contact') {
@@ -695,15 +578,13 @@ const App: React.FC = () => {
       main?.setAttribute('aria-hidden', 'true');
       footer?.setAttribute('aria-hidden', 'true');
     } else {
-      // Modal is closed
       document.body.style.overflow = 'auto';
       header?.removeAttribute('aria-hidden');
       main?.removeAttribute('aria-hidden');
       footer?.removeAttribute('aria-hidden');
-      // Return focus to the element that opened the modal
       if (triggerRef.current) {
           triggerRef.current.focus();
-          triggerRef.current = null; // Clear ref after focus is returned
+          triggerRef.current = null;
       }
     }
     
@@ -719,7 +600,7 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch(page) {
       case 'home':
-        if (isLoading) {
+        if (isLoading && jobs.length === 0) {
           return (
             <div>
               <JobFiltersSkeleton />
@@ -733,7 +614,7 @@ const App: React.FC = () => {
         }
 
         if (error) {
-          return <ErrorDisplay message={error} onDismiss={() => setError(null)} onRetry={fetchJobs} />;
+          return <ErrorDisplay message={error} onDismiss={() => setError(null)} onRetry={refetchJobs} />;
         }
 
         if (selectedDashboardCategory) {
@@ -759,6 +640,8 @@ const App: React.FC = () => {
                   onCategoryFilterChange={setCategoryFilter}
                   categories={allJobCategories}
                   showCategoryFilter={true}
+                  onRefetch={refetchJobs}
+                  isRefetching={isLoading}
                 />
   
                 {filteredJobs.length > 0 ? (
@@ -791,6 +674,8 @@ const App: React.FC = () => {
                 onCategoryFilterChange={setCategoryFilter}
                 categories={allJobCategories}
                 showCategoryFilter={true}
+                onRefetch={refetchJobs}
+                isRefetching={isLoading}
               />
 
               {filtersAreActive ? (
@@ -856,7 +741,7 @@ const App: React.FC = () => {
       case 'calculators':
         return <CalculatorsPage />;
       case 'store':
-        return <AffiliatePage products={products} isLoading={isLoading} />;
+        return <AffiliatePage products={products} isLoading={areProductsLoading} />;
       default:
         return <div>Page not found</div>;
     }
@@ -865,7 +750,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans text-slate-800 dark:text-slate-200 flex flex-col">
-      <Header currentPage={page} onNavigate={handleNavigate} theme={theme} setTheme={setTheme} />
+      <Header currentPage={page} onNavigate={handleNavigate} />
       <div className="sr-only" aria-live="polite" role="status">
         {liveText}
       </div>

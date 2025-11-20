@@ -5,6 +5,13 @@ export const giftCategories: GiftItem[] = [
     {
         title: "Photo Frames",
         description: "Frame your memories beautifully. A wide range of customizable frames for any occasion.",
+        // Placeholder images for the carousel. Replace these with your actual image URLs later.
+        images: [
+            "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", // Wooden frames on wall
+            "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", // Multiple frames decor
+            "https://images.unsplash.com/photo-1534349762230-e0cadf78f5da?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", // Shelf with frames
+            "https://images.unsplash.com/photo-1544207240-8b1025eb7aeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"  // Modern simple frame
+        ],
         // Fix: Converted JSX to React.createElement for compatibility with .ts files.
         icon: (props: React.SVGProps<SVGSVGElement>) => (
             React.createElement('svg', {

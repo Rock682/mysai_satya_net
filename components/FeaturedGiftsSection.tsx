@@ -1,5 +1,6 @@
 import React from 'react';
-import { Page } from '../App';
+// Fix: The 'Page' type is exported from `types.ts`, not `App.tsx`.
+import { Page } from '../types';
 import { giftCategories } from '../data/gifts';
 import { GiftCard } from './GiftCard';
 
