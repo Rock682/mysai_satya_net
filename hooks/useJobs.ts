@@ -78,7 +78,7 @@ export const useJobs = (enabled: boolean) => {
       // Add static job for RRB Group-D Login
       const rrbGroupDJob: Job = {
         id: 'static-rrb-group-d',
-        jobTitle: 'RRB Group-D Login',
+        jobTitle: 'RRB Group - D City Intimation',
         description: 'Direct link to RRB Group-D candidate login for city intimation, score card, and shortlist.',
         category: 'RRB',
         lastDate: null,

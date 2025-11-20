@@ -10,10 +10,22 @@ interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
+  // Check if this is the special RRB Group-D job
+  const isSpecialJob = job.id === 'static-rrb-group-d';
+
+  const handleCardClick = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
+    if (isSpecialJob && job.sourceSheetLink) {
+        // Open link in new tab
+        window.open(job.sourceSheetLink, '_blank', 'noopener,noreferrer');
+    } else {
+        onClick(e);
+    }
+  };
+
   const handleTitleClick = (e: React.MouseEvent) => {
-    // If there is a link, let the default anchor tag behavior happen.
-    // If not, trigger the modal opening.
-    if (job.sourceSheetLink) {
+    // If there is a link and it's NOT the special job (which handles click on card level),
+    // let the default anchor tag behavior happen.
+    if (job.sourceSheetLink && !isSpecialJob) {
         e.stopPropagation(); // Prevent modal from opening if it's a link
     }
   };
@@ -25,21 +37,18 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
   
   const categoryLower = job.category?.toLowerCase() || '';
   const shouldShowDatesSection = (showStartDate || showLastDate) && !['halltickets', 'results', 'counselling'].includes(categoryLower);
-  
-  // Check if this is the special RRB Group-D job
-  const isSpecialJob = job.id === 'static-rrb-group-d';
     
   return (
     <article 
-      onClick={onClick}
+      onClick={handleCardClick}
       className={`group relative bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4 flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 overflow-hidden cursor-pointer
         ${isSpecialJob 
           ? 'border-2 border-red-500 dark:border-red-400 ring-2 ring-red-50 dark:ring-red-900/20' 
           : 'border border-gray-200 dark:border-slate-700 hover:border-green-400 dark:hover:border-green-500'}`}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick(e)}
-      aria-label={`View details for ${job.jobTitle}`}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleCardClick(e)}
+      aria-label={isSpecialJob ? `Open ${job.jobTitle}` : `View details for ${job.jobTitle}`}
     >
       {/* Decorative Accent */}
       <div className={`absolute top-0 right-0 -mt-8 -mr-8 h-24 w-24 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500 ease-in-out
@@ -47,7 +56,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
       
       <div className="relative flex-grow z-10">
         <h3 className={`text-lg font-bold transition-colors duration-300 ${isSpecialJob ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'}`}>
-           {job.sourceSheetLink ? (
+           {/* Only render anchor if NOT special job, because special job card is the link itself */}
+           {job.sourceSheetLink && !isSpecialJob ? (
             <a 
               href={job.sourceSheetLink}
               target="_blank" 
@@ -76,15 +86,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
           <div className="flex items-center text-gray-500 dark:text-gray-400">
             <BriefcaseIcon className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400 dark:text-gray-500" />
              {isSpecialJob ? (
-                <a 
-                  href={job.sourceSheetLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                // Use a span instead of an anchor to allow the click to bubble up to the article
+                <span 
                   className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-red-600 text-white hover:bg-red-700 animate-pulse shadow-sm transition-colors"
                 >
                     {job.employmentType}
-                </a>
+                </span>
             ) : (
                 <span className="inline-block bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                     {job.employmentType}
