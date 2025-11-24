@@ -10,8 +10,8 @@ interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
-  // Check if this is the special RRB Group-D job
-  const isSpecialJob = job.id === 'static-rrb-group-d';
+  // Check if this is a special static job (RRB Group-D or RRB NTPC UG)
+  const isSpecialJob = job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug';
 
   const handleCardClick = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
     if (isSpecialJob && job.sourceSheetLink) {

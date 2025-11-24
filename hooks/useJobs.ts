@@ -92,7 +92,24 @@ export const useJobs = (enabled: boolean) => {
         blogContent: ''
       };
 
-      const allJobs = [rrbGroupDJob, ...parsedJobs];
+      // Add static job for RRB NTPC (UG) Login
+      const rrbNtpcUgJob: Job = {
+        id: 'static-rrb-ntpc-ug',
+        jobTitle: 'RRB NTPC (Under graduate) Results',
+        description: 'Direct link to RRB NTPC (Under Graduate) login.',
+        category: 'RRB',
+        lastDate: null,
+        startDate: new Date(), // Use current date to keep it fresh/top
+        salary: '',
+        responsibilities: '',
+        syllabusLink: '',
+        employmentType: 'Click Here',
+        requiredDocuments: '',
+        sourceSheetLink: 'https://rrb.digialm.com/EForms/configuredHtml/2667/95125/login.html',
+        blogContent: ''
+      };
+
+      const allJobs = [rrbNtpcUgJob, rrbGroupDJob, ...parsedJobs];
 
       setJobs(allJobs);
       jobsCache = { data: allJobs, timestamp: Date.now() };
