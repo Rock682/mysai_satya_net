@@ -296,15 +296,8 @@ const App: React.FC = () => {
   }, [sortedJobs]);
   
   const tickerJobs = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); 
-
-    return sortedJobs
-      .filter(job => {
-        const lastDate = parseDate(job.lastDate);
-        return !lastDate || lastDate >= today;
-      })
-      .slice(0, 10);
+    // Filter specifically for the RRB CEN 09/2025 Level-1 Notification to be the only scrolling update
+    return sortedJobs.filter(job => job.id === 'static-rrb-group-d-2026');
   }, [sortedJobs]);
 
 

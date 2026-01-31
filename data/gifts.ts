@@ -100,7 +100,12 @@ export const giftCategories: GiftItem[] = [
     },
     {
         title: "Pillows & Cushions",
-        description: "Add a personal touch to your home decor. Cozy, custom-printed pillows and cushions.",
+        description: "Add a personal touch to your home decor. Cozy, custom-printed pillows and cushions with your favorite photos on them.",
+        images: [
+            "https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1592789705553-5b359f7e996c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1629905679177-4c4e2623654f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
         // Fix: Converted JSX to React.createElement for compatibility with .ts files.
          icon: (props: React.SVGProps<SVGSVGElement>) => (
             React.createElement('svg', {
@@ -123,7 +128,12 @@ export const giftCategories: GiftItem[] = [
     },
     {
         title: "Wall Clocks",
-        description: "Tell time your way. Design a unique wall clock with your own images and art.",
+        description: "Tell time your way. Design a unique wall clock with your own images and art, or choose from our mechanical geared designs.",
+        images: [
+             "https://images.unsplash.com/photo-1549363539-75a7c9339d2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", // Gear clock
+             "https://images.unsplash.com/photo-1579762593175-2022605496ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", // Mechanical
+             "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" // Standard Wall Clock
+        ],
         // Fix: Converted JSX to React.createElement for compatibility with .ts files.
          icon: (props: React.SVGProps<SVGSVGElement>) => (
             React.createElement('svg', {

@@ -75,21 +75,67 @@ export const useJobs = (enabled: boolean) => {
         blogContent: row['blog content'],
       }));
 
-      // Add static job for RRB Group-D Login
+      // Updated static job for RRB Group-D 2026 Notification
       const rrbGroupDJob: Job = {
-        id: 'static-rrb-group-d',
-        jobTitle: 'RRB Group - D City Intimation',
-        description: 'Direct link to RRB Group-D candidate login for city intimation, score card, and shortlist.',
+        id: 'static-rrb-group-d-2026',
+        jobTitle: 'RRB CEN 09/2025 Level-1 (Group D) Notification',
+        description: 'Mega Recruitment: 22,195 Vacancies announced for Level-1 (Group D) posts in Indian Railways. 10th Pass or ITI candidates eligible. Apply online from Jan 31, 2026.',
         category: 'RRB',
-        lastDate: null,
-        startDate: new Date(), // Use current date to keep it fresh/top
-        salary: '',
-        responsibilities: '',
+        lastDate: '2026-03-02',
+        startDate: '2026-01-31',
+        salary: 'Level-1 of 7th CPC Pay Matrix',
+        responsibilities: 'Track maintenance, helper, assistant, and other department specific duties.',
         syllabusLink: '',
-        employmentType: 'Click Here',
-        requiredDocuments: '',
-        sourceSheetLink: 'https://rrb.digialm.com//EForms/configuredHtml/33015/96410/login.html',
-        blogContent: ''
+        employmentType: 'Central Govt',
+        requiredDocuments: '10th Class Marks Memo, ITI/NAC Certificate (if applicable), Community Certificate (OBC-NCL/SC/ST), ID Proof.',
+        sourceSheetLink: '',
+        blogContent: `
+# RRB CEN 09/2025 Level-1 (Group D) Notification – Full Details
+
+The Railway Recruitment Boards (RRBs) have released the detailed CEN 09/2025 Level-1 notification for recruitment to various Level-1 (Group D) posts in Indian Railways.
+
+## Overview of RRB CEN 09/2025 Level-1
+* **Notification Number:** CEN 09/2025 – Level-1
+* **Posts:** Various Level-1 (erstwhile Group D) posts (Track Maintainer, Helper, Assistant, etc.)
+* **Total Vacancies:** 22,195 (Across all Railway zones)
+* **Conducting Body:** Railway Recruitment Boards (RRBs)
+* **Job Category:** Central Government – Indian Railways Level-1 posts
+
+## Important Dates
+* **Start of Online Application:** 31 January 2026
+* **Last Date for Online Application:** 02 March 2026
+* **Application Correction Window:** 05 March 2026 to 14 March 2026
+* **Exam Dates (CBT/PET):** To be notified later
+
+## Eligibility Criteria
+* **Nationality:** Must be a citizen of India (or subjects of Nepal/Bhutan as per rules).
+* **Age Limit (as on 01.01.2026):** 18 to 33 years (General/UR).
+* **Age Relaxation:** OBC (NCL): +3 years, SC/ST: +5 years, plus relaxations for PwBD/Ex-SM.
+* **Educational Qualification:** 10th Pass (Matriculation) OR ITI OR National Apprenticeship Certificate (NAC).
+
+## Selection Process
+1. **Computer Based Test (CBT):** Objective type MCQs. Negative marking: 1/3rd.
+2. **Physical Efficiency Test (PET):** Qualifying nature (Running, weight lifting).
+3. **Document Verification (DV):** Verification of original certificates.
+4. **Medical Examination:** Must pass the prescribed medical standard.
+
+## Exam Pattern – CBT
+* **Sections:** Mathematics, General Intelligence & Reasoning, General Science, General Awareness & Current Affairs.
+* **Normalization:** Done for multiple shift exams.
+
+## Application Fee
+* **General / OBC (NCL):** ₹500 (₹400 refunded after appearing in CBT).
+* **SC / ST / Female / Minorities / EBC / PwBD / Ex-SM:** ₹250 (Full ₹250 refunded after appearing in CBT).
+
+## How to Apply Online
+1. Visit the official RRB website.
+2. Click on "New Registration" for CEN 09/2025.
+3. Fill personal details and educational qualifications.
+4. Upload Photograph, Signature, and Category certificates.
+5. Pay application fee and submit.
+
+**Note:** A candidate can apply to only one RRB under this notification.
+        `
       };
 
       // Add static job for RRB NTPC (UG) Login
@@ -98,8 +144,8 @@ export const useJobs = (enabled: boolean) => {
         jobTitle: 'RRB NTPC (Under graduate) Results',
         description: 'Direct link to RRB NTPC (Under Graduate) login.',
         category: 'RRB',
-        lastDate: null,
-        startDate: new Date(), // Use current date to keep it fresh/top
+        lastDate: '2025-12-04',
+        startDate: '2025-11-22',
         salary: '',
         responsibilities: '',
         syllabusLink: '',
@@ -109,7 +155,7 @@ export const useJobs = (enabled: boolean) => {
         blogContent: ''
       };
 
-      const allJobs = [rrbNtpcUgJob, rrbGroupDJob, ...parsedJobs];
+      const allJobs = [rrbGroupDJob, rrbNtpcUgJob, ...parsedJobs];
 
       setJobs(allJobs);
       jobsCache = { data: allJobs, timestamp: Date.now() };

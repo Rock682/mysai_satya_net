@@ -10,12 +10,13 @@ interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
-  // Check if this is a special static job (RRB Group-D or RRB NTPC UG)
-  const isSpecialJob = job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug';
+  // Check if this is a special static job or the latest 2026 notification
+  const isSpecialJob = job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug' || job.id === 'static-rrb-group-d-2026';
+  const isLatestNotification = job.id === 'static-rrb-group-d-2026';
 
   const handleCardClick = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
-    if (isSpecialJob && job.sourceSheetLink) {
-        // Open link in new tab
+    if ((job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug') && job.sourceSheetLink) {
+        // Open link in new tab for login portals
         window.open(job.sourceSheetLink, '_blank', 'noopener,noreferrer');
     } else {
         onClick(e);
@@ -23,9 +24,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
   };
 
   const handleTitleClick = (e: React.MouseEvent) => {
-    // If there is a link and it's NOT the special job (which handles click on card level),
-    // let the default anchor tag behavior happen.
-    if (job.sourceSheetLink && !isSpecialJob) {
+    // If there is a link and it's NOT the special login job, let the default anchor tag behavior happen.
+    if (job.sourceSheetLink && (job.id !== 'static-rrb-group-d' && job.id !== 'static-rrb-ntpc-ug')) {
         e.stopPropagation(); // Prevent modal from opening if it's a link
     }
   };
@@ -37,33 +37,48 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
   
   const categoryLower = job.category?.toLowerCase() || '';
   const shouldShowDatesSection = (showStartDate || showLastDate) && !['halltickets', 'results', 'counselling'].includes(categoryLower);
-    
+  
+  // Determine focus ring color based on job type
+  const focusRingClass = isSpecialJob 
+    ? 'focus:ring-red-500 dark:focus:ring-red-400' 
+    : 'focus:ring-green-500 dark:focus:ring-green-400';
+
   return (
     <article 
       onClick={handleCardClick}
-      className={`group relative bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4 flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 overflow-hidden cursor-pointer
+      className={`group relative bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4 flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${focusRingClass}
         ${isSpecialJob 
           ? 'border-2 border-red-500 dark:border-red-400 ring-2 ring-red-50 dark:ring-red-900/20' 
-          : 'border border-gray-200 dark:border-slate-700 hover:border-green-400 dark:hover:border-green-500'}`}
+          : 'border border-gray-200 dark:border-slate-700 hover:border-green-400 dark:hover:border-green-500'}
+        ${isLatestNotification ? 'animate-pulse-subtle' : ''}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleCardClick(e)}
       aria-label={isSpecialJob ? `Open ${job.jobTitle}` : `View details for ${job.jobTitle}`}
     >
+      {/* New Notification Badge */}
+      {isLatestNotification && (
+        <div className="absolute top-0 left-0 z-20">
+          <div className="bg-red-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded-br-lg shadow-md animate-bounce-slow">
+            New Notification
+          </div>
+        </div>
+      )}
+
       {/* Decorative Accent */}
       <div className={`absolute top-0 right-0 -mt-8 -mr-8 h-24 w-24 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500 ease-in-out
         ${isSpecialJob ? 'bg-red-100 dark:bg-red-900/40' : 'bg-green-50 dark:bg-green-900/20'}`}></div>
       
-      <div className="relative flex-grow z-10">
+      <div className="relative flex-grow z-10 pt-2">
         <h3 className={`text-lg font-bold transition-colors duration-300 ${isSpecialJob ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400'}`}>
            {/* Only render anchor if NOT special job, because special job card is the link itself */}
-           {job.sourceSheetLink && !isSpecialJob ? (
+           {job.sourceSheetLink && (job.id !== 'static-rrb-group-d' && job.id !== 'static-rrb-ntpc-ug') ? (
             <a 
               href={job.sourceSheetLink}
               target="_blank" 
               rel="noopener noreferrer" 
               onClick={handleTitleClick}
-              className="focus:outline-none focus:ring-2 focus:ring-green-400 rounded-sm"
+              className="focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 rounded-sm hover:underline focus:underline decoration-green-500 decoration-2"
             >
               {job.jobTitle}
             </a>
@@ -86,9 +101,8 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
           <div className="flex items-center text-gray-500 dark:text-gray-400">
             <BriefcaseIcon className="w-4 h-4 mr-2 flex-shrink-0 text-gray-400 dark:text-gray-500" />
              {isSpecialJob ? (
-                // Use a span instead of an anchor to allow the click to bubble up to the article
                 <span 
-                  className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-red-600 text-white hover:bg-red-700 animate-pulse shadow-sm transition-colors"
+                  className={`inline-block text-xs font-bold px-3 py-1 rounded-full shadow-sm transition-colors ${isLatestNotification ? 'bg-red-700 text-white' : 'bg-red-600 text-white animate-pulse'}`}
                 >
                     {job.employmentType}
                 </span>
@@ -135,13 +149,30 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center justify-center w-full px-3 py-2 text-sm font-semibold text-center text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+            className="flex items-center justify-center w-full px-3 py-2 text-sm font-semibold text-center text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-green-500 transition-colors"
           >
             <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
             Download Syllabus
           </a>
         </div>
       )}
+      
+      <style>{`
+        @keyframes pulse-subtle {
+          0%, 100% { border-color: rgba(239, 68, 68, 1); }
+          50% { border-color: rgba(239, 68, 68, 0.4); }
+        }
+        .animate-pulse-subtle {
+          animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 2s infinite;
+        }
+      `}</style>
     </article>
   );
 };
