@@ -296,8 +296,9 @@ const App: React.FC = () => {
   }, [sortedJobs]);
   
   const tickerJobs = useMemo(() => {
-    // Filter specifically for the RRB CEN 09/2025 Level-1 Notification to be the only scrolling update
-    return sortedJobs.filter(job => job.id === 'static-rrb-group-d-2026');
+    // Filter specifically for both RRB and Postal GDS latest notifications
+    const tickerIds = ['static-rrb-group-d-2026', 'static-postal-2026'];
+    return sortedJobs.filter(job => tickerIds.includes(String(job.id)));
   }, [sortedJobs]);
 
 
