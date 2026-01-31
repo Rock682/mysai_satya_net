@@ -75,6 +75,51 @@ export const useJobs = (enabled: boolean) => {
         blogContent: row['blog content'],
       }));
 
+      // Static job for India Post GDS 2026
+      const postalGdsJob: Job = {
+        id: 'static-postal-2026',
+        jobTitle: 'India Post GDS Recruitment 2026 (Schedule-I)',
+        description: 'Mega Postal Recruitment: 28,740 Vacancies (1,060 for AP). No Exam - Purely merit-based selection on 10th Standard marks. Registration starts Jan 31, 2026.',
+        category: 'Govt Jobs',
+        lastDate: '2026-02-14',
+        startDate: '2026-01-30',
+        salary: 'BPM: ₹12,000-29,380 | ABPM/Dak Sevak: ₹10,000-24,470',
+        responsibilities: 'Mail delivery, post office operations, and marketing of postal products/services.',
+        syllabusLink: '',
+        employmentType: 'Central Govt',
+        requiredDocuments: '10th Class Marks Memo, Computer Knowledge Certificate, Caste Certificate (if applicable), Aadhaar Card.',
+        sourceSheetLink: 'https://indiapostgdsonline.gov.in/',
+        blogContent: `
+# Department of Posts: GDS Recruitment 2026 (Schedule-I)
+
+The Department of Posts released the Schedule-I January 2026 notification on January 30, 2026, announcing approximately 28,740 vacancies nationwide.
+
+## Key Highlights for Andhra Pradesh
+Since you are based in Andhra Pradesh, here are the specific details for your circle:
+* **AP Circle Vacancies:** There are 1,060 vacancies specifically for Andhra Pradesh.
+* **Local Language Requirement:** You must have studied Telugu up to the 10th standard to be eligible for these posts.
+* **No Exam:** Selection is based purely on a merit list prepared from your 10th standard marks. There is no written examination or interview.
+
+## Important Dates (2026)
+The timeline is short, so you should apply quickly.
+* **Notification Released:** January 30, 2026
+* **Registration Begins:** January 31, 2026
+* **Registration Ends:** February 14, 2026
+* **Application Submission Ends:** February 16, 2026
+* **Correction Window:** February 18 – 19, 2026
+
+## Eligibility Requirements
+To apply for the posts of Branch Postmaster (BPM), Assistant Branch Postmaster (ABPM), or Dak Sevak, you must meet the following criteria:
+
+* **Education:** 10th Standard (SSC) pass with Mathematics and English as compulsory or elective subjects.
+* **Age Limit:** 18 to 40 years (as of February 14/16, 2026). Age relaxation applies for OBC (3 years) and SC/ST (5 years).
+* **Skills:**
+    * Knowledge of computers.
+    * Ability to ride a bicycle (scooters/motorcycles are also accepted).
+    * Adequate means of livelihood (required for the GDS post).
+        `
+      };
+
       // Updated static job for RRB Group-D 2026 Notification
       const rrbGroupDJob: Job = {
         id: 'static-rrb-group-d-2026',
@@ -155,7 +200,7 @@ The Railway Recruitment Boards (RRBs) have released the detailed CEN 09/2025 Lev
         blogContent: ''
       };
 
-      const allJobs = [rrbGroupDJob, rrbNtpcUgJob, ...parsedJobs];
+      const allJobs = [postalGdsJob, rrbGroupDJob, rrbNtpcUgJob, ...parsedJobs];
 
       setJobs(allJobs);
       jobsCache = { data: allJobs, timestamp: Date.now() };

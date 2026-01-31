@@ -11,8 +11,8 @@ interface JobCardProps {
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onClick }) => {
   // Check if this is a special static job or the latest 2026 notification
-  const isSpecialJob = job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug' || job.id === 'static-rrb-group-d-2026';
-  const isLatestNotification = job.id === 'static-rrb-group-d-2026';
+  const isSpecialJob = job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug' || job.id === 'static-rrb-group-d-2026' || job.id === 'static-postal-2026';
+  const isLatestNotification = job.id === 'static-rrb-group-d-2026' || job.id === 'static-postal-2026';
 
   const handleCardClick = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
     if ((job.id === 'static-rrb-group-d' || job.id === 'static-rrb-ntpc-ug') && job.sourceSheetLink) {
